@@ -12,7 +12,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{background:var(--night);color:var(--ink);font-family:var(--body);font-weight:500;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body{background:var(--night);color:var(--ink);font-family:var(--body);font-weight:500;overflow:hidden;touch-action:none;-webkit-touch-callout:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--sonar);outline-offset:3px}
 #app{position:relative;height:100%;overflow:hidden;background:var(--night)}
@@ -65,6 +65,7 @@ button{font:inherit;color:inherit}
 .result{display:flex;flex-wrap:wrap;gap:10px}
 .result .meter{flex:1 1 110px}
 .note{font-size:12px;color:var(--dim)}
+@media (max-width:430px){.pre{display:none}.top{gap:6px 8px}.meter{padding:5px 8px}.meter .val{font-size:17px}.hpbar{width:28vw}}
 </style>
 
 <div id="app">
@@ -74,7 +75,7 @@ button{font:inherit;color:inherit}
     <div class="top">
       <div class="meter"><div class="label">ウェーブ <span id="wave">1</span></div><div class="val"><span id="score">0</span> <small>点</small></div></div>
       <div class="meter"><div class="label">体力</div><div class="hpbar" id="hpbar"><i id="hp"></i></div>
-        <div class="pips"><span class="pip" id="pip1"></span><span class="pip" id="pip2"></span><span id="pipnote">ソナーまであと4体</span></div></div>
+        <div class="pips"><span class="pip" id="pip1"></span><span class="pip" id="pip2"></span><span id="pipnote"><span class="pre">ソナーまで</span>あと4体</span></div></div>
       <div class="meter"><div class="label">弾</div><div class="val"><span id="ammo">30</span> <small>/ 30</small></div></div>
     </div>
   </div>
@@ -107,7 +108,8 @@ button{font:inherit;color:inherit}
       </ul>
       <ul class="keys" id="keysTouch" hidden>
         <li><b>画面の左側</b></li><li>なぞって移動</li>
-        <li><b>画面の右側</b></li><li>なぞって視点。「撃つ」を押したままでも視点を動かせます</li>
+        <li><b>画面の右側</b></li><li>なぞって視点。敵に照準を合わせると自動で撃ちます</li>
+        <li><b>撃つ</b></li><li>押している間ずっと連射。押したまま視点も動かせます</li>
         <li><b>ソナー</b></li><li>4体倒すごとに1回、壁ごしに敵が見える</li>
       </ul>
       <button class="go" id="start" type="button">作戦開始</button>
@@ -149,6 +151,8 @@ button{font:inherit;color:inherit}
 'use strict';
 const $=id=>document.getElementById(id);
 const app=$('app');
+function fail(t){$('start').hidden=true;$('bestNote').textContent=t;}
+if(!window.THREE){fail('ゲームの部品を読み込めませんでした。通信状態を確かめて、ページを開き直してください。');return;}
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const C={night:css('--night'),amber:css('--amber'),sonar:css('--sonar'),danger:css('--danger'),line:css('--line'),panel:css('--panel')};
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -207,7 +211,7 @@ let seed=20261112;const rnd=()=>(seed=seed*16807%2147483647)/2147483647;
 const LV=2.6;
 function HT(x,z){if(x<=0||z<=0||x>=MW-1||z>=MH-1)return 3;const h=((x*73856093)^(z*19349663))>>>0;return h%7===0?3:1+(h>>3)%2;}
 
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+let renderer;try{renderer=new THREE.WebGLRenderer({antialias:!coarse,powerPreference:'high-performance'});}catch(e){fail('このブラウザでは3D表示（WebGL）が使えないため、遊べません。別のブラウザでお試しください。');return;}
 app.insertBefore(renderer.domElement,app.firstChild);
 renderer.autoClear=false;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const FOG=col(0x18202c);
@@ -415,7 +419,10 @@ let composer=null,finalPass=null,Q=2;
   if(!renderer.capabilities.isWebGL2||!renderer.extensions.has('EXT_color_buffer_float'))return;
   try{
     const RT=coarse?THREE.WebGLRenderTarget:THREE.WebGLMultisampleRenderTarget;
-    composer=new THREE.EffectComposer(renderer,new RT(4,4,{type:THREE.HalfFloatType,format:THREE.RGBAFormat,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter}));
+    const rt=new RT(64,64,{type:THREE.HalfFloatType,format:THREE.RGBAFormat,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
+    renderer.setRenderTarget(rt);const gl=renderer.getContext(),ok=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;renderer.setRenderTarget(null);
+    if(!ok){rt.dispose();return;}
+    composer=new THREE.EffectComposer(renderer,rt);
     composer.addPass(new THREE.RenderPass(scene,camera));
     const gp=new THREE.RenderPass(gunScene,gunCam);gp.clear=false;gp.clearDepth=true;composer.addPass(gp);
     composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(256,256),.62,.55,1));
@@ -427,7 +434,7 @@ let composer=null,finalPass=null,Q=2;
 })();
 function applyQuality(){
   const comp=Q===2&&!!composer;
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,Q===2?(coarse?1.5:2):Q===1?1.25:1));
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,Q===2?(coarse?1.5:2):Q===1?1.25:coarse?.85:1));
   renderer.toneMapping=comp?THREE.NoToneMapping:THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
   renderer.outputEncoding=comp?THREE.LinearEncoding:THREE.sRGBEncoding;
   renderer.shadowMap.enabled=Q>0;moon.castShadow=Q>0;torch.castShadow=Q===2&&!coarse;if(Q>0)moon.shadow.needsUpdate=true;
@@ -501,7 +508,7 @@ function hud(){
   $('wave').textContent=G.wave;$('score').textContent=G.score;$('ammo').textContent=P.ammo;
   $('hp').style.transform='scaleX('+Math.max(0,P.hp)/100+')';$('hpbar').classList.toggle('low',P.hp<35);
   $('pip1').classList.toggle('on',G.sonar>=1);$('pip2').classList.toggle('on',G.sonar>=2);
-  $('pipnote').textContent=G.sonar>=2?'ソナー満タン':'ソナーまであと'+(4-G.kills%4)+'体';
+  $('pipnote').innerHTML=G.sonar>=2?'<span class="pre">ソナー</span>満タン':'<span class="pre">ソナーまで</span>あと'+(4-G.kills%4)+'体';
 }
 
 function reset(){
@@ -576,7 +583,8 @@ function lock(){
   try{const p=app.requestPointerLock();if(p&&p.catch)p.catch(()=>{if(!everLocked)noLock=true;});}catch(e){if(!everLocked)noLock=true;}
 }
 function begin(e){
-  touchMode=!!(e&&e.pointerType==='touch')||(!(e&&e.pointerType)&&matchMedia('(pointer: coarse)').matches);
+  touchMode=touchMode||!!(e&&e.pointerType==='touch')||(!(e&&e.pointerType)&&matchMedia('(pointer: coarse)').matches);
+  try{if(touchMode&&navigator.audioSession)navigator.audioSession.type='playback';}catch(_){}
   show($('keysPc'),!touchMode);show($('keysTouch'),touchMode);
   initAudio();reset();setState('play');lock();
 }
@@ -592,6 +600,15 @@ if(matchMedia('(pointer: coarse)').matches){show($('keysPc'),false);show($('keys
 $('start').addEventListener('click',begin);$('retry').addEventListener('click',begin);$('resume').addEventListener('click',resume);
 
 /* ---------- input ---------- */
+addEventListener('touchstart',()=>{if(touchMode)return;touchMode=true;show($('keysPc'),false);show($('keysTouch'),true);if(G.state==='play'){if(document.exitPointerLock&&locked){locked=false;document.exitPointerLock();}setState('play');}},{capture:true,passive:true});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+app.addEventListener('touchmove',e=>{if(G.state==='play')e.preventDefault();},{passive:false});
+function aimed(){
+  const cp=Math.cos(P.pitch),ax=-Math.sin(P.yaw)*cp,ay=Math.sin(P.pitch),az=-Math.cos(P.yaw)*cp;
+  for(const b of bots){const ox=b.x-P.x,oy=b.g.position.y-EYE,oz=b.z-P.z,tc=ox*ax+oy*ay+oz*az;if(tc<0||tc>45)continue;
+    if(ox*ox+oy*oy+oz*oz-tc*tc<.81&&los(P.x,P.z,b.x,b.z))return true;}
+  return false;
+}
 addEventListener('keydown',e=>{
   if(G.state==='play'&&['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
   keys[e.code]=true;
@@ -651,7 +668,7 @@ function update(dt){
   if(ml>.1)P.bob+=dt*9;
   if(P.reload>0){P.reload-=dt;if(P.reload<=0){P.ammo=30;hud();}}
   P.cool-=dt;
-  if((mouseDown||touchFire||keys.Space)&&P.cool<=0&&P.reload<=0&&P.ammo>0)shoot();
+  if(P.cool<=0&&P.reload<=0&&P.ammo>0&&(mouseDown||touchFire||keys.Space||(touchMode&&aimed())))shoot();
   if(G.time-P.hurtAt>4&&P.hp<100){P.hp=Math.min(100,P.hp+22*dt);hud();}
   /* waves */
   if(G.nextWaveT>0){G.nextWaveT-=dt;if(G.nextWaveT<=0)startWave();}
@@ -718,11 +735,13 @@ function fx(dt){
   if(subT>0){subT-=dt;if(subT<=0)$('sub').style.opacity=0;}
 }
 let wAcc=0,wN=0;
-function watch(dt){if(G.time<2.5||window.__noWatch)return;wAcc+=dt;if(++wN<90)return;const avg=wAcc/wN;wAcc=wN=0;if(avg>.036&&Q>0){Q--;applyQuality();}}
+let wSkip=40;
+function watch(dt){if(window.__noWatch)return;if(wSkip>0){wSkip--;return;}wAcc+=dt;if(++wN<45)return;const avg=wAcc/wN;wAcc=wN=0;if(avg>.034&&Q>0){Q--;wSkip=30;applyQuality();}}
 let last=performance.now(),menuA=0;
 function frame(now){
   const dt=Math.min(.05,(now-last)/1000);last=now;
-  if(G.state==='play'){update(dt);fx(dt);watch(dt);}
+  if(G.state==='play'){update(dt);fx(dt);}
+  if(G.state==='play'||G.state==='menu')watch(dt);
   if(G.state==='menu'){if(!reduced)menuA+=dt*.1;camera.position.set(10*CS,EYE+.4,7.5*CS);camera.rotation.set(-.04,menuA+2.2,0);gun.visible=false;torch.intensity=0;}
   else{gun.visible=true;torch.intensity=1.5;camera.position.set(P.x,EYE+(reduced?0:Math.abs(Math.sin(P.bob))*.035),P.z);camera.rotation.set(P.pitch,P.yaw,0);updateListener();}
   if(G.state!=='pause')rainStep(dt);
