@@ -412,7 +412,7 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>{keys[e.code]=false;});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouseDown=false;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});
-renderer.domElement.addEventListener('mousedown',e=>{if(G.state!=='play'||touchMode)return;if(e.button===0)mouseDown=true;lock();});
+app.addEventListener('mousedown',e=>{if(G.state!=='play'||touchMode||(e.target.closest&&e.target.closest('button')))return;if(e.button===0)mouseDown=true;lock();});
 addEventListener('mouseup',()=>{mouseDown=false;});
 addEventListener('mousemove',e=>{if(G.state!=='play'||touchMode)return;if(locked||mouseDown)look(e.movementX||0,e.movementY||0,.0023);});
 renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
