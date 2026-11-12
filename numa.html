@@ -135,6 +135,41 @@ summary{cursor:pointer;font-weight:900}
 .stat.big,.stat.full{grid-column:1/-1}
 .stat.big{background:var(--yellow)}
 .stat.big .v{font-size:clamp(28px,8vw,40px)}
+/* title screen: the logo floats on the water, wears its own earphones, and its second line is sinking */
+.title{place-items:start center;background:linear-gradient(color-mix(in srgb,var(--ink) 12%,transparent),color-mix(in srgb,var(--ink) 66%,transparent) 62%)}
+.tw{width:min(100%,600px);display:flex;flex-direction:column;gap:12px;margin-block:auto}
+.logo{isolation:isolate;margin:0;font-family:var(--display);font-weight:400;font-size:clamp(44px,15vw,100px);line-height:1.02;text-align:center;padding-top:.12em;display:flex;flex-direction:column;align-items:center}
+.ln{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.l2{align-items:flex-end;margin-top:-.02em;padding-bottom:.12em}
+.ch{display:inline-block;animation:plop .75s cubic-bezier(.2,1.6,.4,1) both;animation-delay:calc(var(--i)*80ms)}
+.ch i{position:relative;display:inline-block;font-style:normal;color:transparent;transform:rotate(var(--r));animation:bob 3.4s ease-in-out infinite;animation-delay:calc(var(--i)*-.45s)}
+.ch i::before,.ch i::after{content:attr(data-c);position:absolute;left:0;top:0}
+.ch i::before{color:var(--ink);-webkit-text-stroke:.17em var(--ink);filter:drop-shadow(.06em .08em 0 var(--ink))}
+.ch i::after{background:linear-gradient(#fffbe0 0 34%,var(--yellow) 34% 76%,#f2a900 76%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.numa{font-size:1.5em;margin-right:.04em}
+.numa i::after{background:linear-gradient(#e6fff7 0 30%,var(--mint) 30% 62%,#2aa586 62%);-webkit-background-clip:text;background-clip:text}
+.dv i::after{background:linear-gradient(#ffffff 0 34%,#ffd3e2 34% 74%,var(--pink) 74%);-webkit-background-clip:text;background-clip:text}
+.d0{position:relative;top:.02em}.d1{position:relative;top:.12em}.d2{position:relative;top:.28em}
+.bud{flex:none;width:.5em;height:.5em;border-radius:50%;background:radial-gradient(circle at 50% 50%,var(--ink) 0 26%,var(--yellow) 28%);border:.07em solid var(--ink);box-shadow:.05em .06em 0 var(--ink);margin:.1em .04em 0;animation:plop .75s cubic-bezier(.2,1.6,.4,1) both .35s}
+.cable{position:absolute;z-index:-1;left:.3em;right:.3em;top:60%;width:calc(100% - .6em);height:2.1em;overflow:visible;fill:none}
+.cable path{vector-effect:non-scaling-stroke;stroke-linecap:round}
+.cable .c0{stroke:var(--ink);stroke-width:9}
+.cable .c1{stroke:#e58a3a;stroke-width:3.5}
+.puddle{position:absolute;z-index:-1;left:-.35em;right:-.35em;bottom:-.06em;height:.62em;border-radius:50%;background:#1c5e4a;border:.05em solid var(--ink);box-shadow:0 .06em 0 var(--ink)}
+.wavebox{position:absolute;left:-.3em;right:-.3em;bottom:-.02em;height:.3em;overflow:hidden;border-radius:0 0 50% 50%/0 0 100% 100%}
+.wavebox svg{display:block;width:200%;height:100%;animation:slide 5s linear infinite}
+.wavebox path{fill:#2f8f77;stroke:var(--paper);stroke-width:3;vector-effect:non-scaling-stroke}
+.under{display:flex;justify-content:center;margin-top:-2px}
+.rib{background:var(--red);color:var(--paper);font-weight:900;font-size:clamp(12px,3.4vw,15px);letter-spacing:.06em;padding:6px 16px 6px 26px;clip-path:polygon(14px 0,100% 0,100% 100%,14px 100%,0 50%);transform:rotate(-2.5deg);filter:drop-shadow(3px 3px 0 var(--ink))}
+.dstrip{display:flex;align-items:center;gap:10px;font-size:11px;white-space:nowrap;text-shadow:0 1px 0 var(--ink)}
+.dl{flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,#2bb5a0,#1f6eaa,#4e3e8c,#140e2c);border:2px solid var(--ink);position:relative}
+.dl b{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--red);border:2px solid var(--ink)}
+.dl b.last{width:16px;height:16px;margin:-8px 0 0 -12px;background:var(--paper)}
+.title .sheet{width:100%}
+@keyframes plop{0%{transform:translateY(-1.1em) scale(.5);opacity:0}100%{transform:none;opacity:1}}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(var(--r))}50%{transform:translateY(-.055em) rotate(calc(var(--r) + 2.5deg))}}
+@keyframes slide{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.ch,.ch i,.bud,.wavebox svg{animation:none}}
 #frBig{width:100%;height:auto;display:block;border-radius:12px}
 #share{width:100%;border:2px dashed var(--ink);border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-weight:500;font-size:13px;line-height:1.6;padding:8px 10px;resize:none;-webkit-user-select:text;user-select:text}
 </style>
@@ -163,20 +198,35 @@ summary{cursor:pointer;font-weight:900}
   <div class="toast" id="toast"></div>
   <div class="banner" id="banner"><b id="bT"></b><span id="bS"></span></div>
 
-  <div class="overlay" id="menu">
-    <div class="sheet">
-      <div class="eyebrow">指1本で遊べる機材沼サバイバル</div>
-      <h1>イヤホン沼ダイブ</h1>
-      <p>めざすは<b>沼の底、深さ1000m</b>。200mごとに待ちかまえるボスを倒して、底にひそむ「プラシーボ」を消し去ろう。攻撃は自動。なぞって動かし、ドライバーやケーブルを買い足して覚醒させます。</p>
-      <ul class="how">
-        <li><b>コンボ</b></li><li>ノイズを続けて消すと経験値アップ。伸ばすとフィーバー</li>
-        <li><b>覚醒</b></li><li>ドライバーを Lv5、相性のいい機材を Lv3 にすると進化</li>
-        <li><b>福袋</b></li><li>金ぶちの高級ノイズやボス、ミッション達成で手に入る</li>
-      </ul>
-      <div class="lbl">出発するイヤホン</div>
-      <div class="starters" id="starters"></div>
-      <div class="btns"><button class="go" id="start" type="button">沼に入る</button><span class="note" id="bestNote"></span></div>
-      <details><summary id="achSum">実績</summary><ul class="ach" id="achList"></ul></details>
+  <div class="overlay title" id="menu">
+    <div class="tw">
+      <h1 class="logo" aria-label="イヤホン沼ダイブ">
+        <span class="ln l1" aria-hidden="true">
+          <svg class="cable" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="c0" d="M0 0 C0 46 38 34 50 56 C62 34 100 46 100 0 M50 56 C50 78 42 86 46 100"/><path class="c1" d="M0 0 C0 46 38 34 50 56 C62 34 100 46 100 0 M50 56 C50 78 42 86 46 100"/></svg>
+          <span class="bud"></span><span class="ch " style="--i:0;--r:-6deg"><i data-c="イ">イ</i></span><span class="ch " style="--i:1;--r:3deg"><i data-c="ヤ">ヤ</i></span><span class="ch " style="--i:2;--r:-3deg"><i data-c="ホ">ホ</i></span><span class="ch " style="--i:3;--r:5deg"><i data-c="ン">ン</i></span><span class="bud"></span>
+        </span>
+        <span class="ln l2" aria-hidden="true">
+          <span class="puddle"></span><span class="ch numa" style="--i:4;--r:-4deg"><i data-c="沼">沼</i></span><span class="ch dv d0" style="--i:5;--r:6deg"><i data-c="ダ">ダ</i></span><span class="ch dv d1" style="--i:6;--r:12deg"><i data-c="イ">イ</i></span><span class="ch dv d2" style="--i:7;--r:19deg"><i data-c="ブ">ブ</i></span>
+          <span class="wavebox"><svg viewBox="0 0 1200 40" preserveAspectRatio="none"><path d="M0 14 Q25 2 50 14 T100 14 T150 14 T200 14 T250 14 T300 14 T350 14 T400 14 T450 14 T500 14 T550 14 T600 14 T650 14 T700 14 T750 14 T800 14 T850 14 T900 14 T950 14 T1000 14 T1050 14 T1100 14 T1150 14 T1200 14 V40 H0Z"/></svg></span>
+        </span>
+      </h1>
+      <div class="under"><span class="rib">指1本で遊べる機材沼サバイバル</span></div>
+      <div class="dstrip" aria-hidden="true"><span>0m</span><div class="dl"><b style="left:20%"></b><b style="left:40%"></b><b style="left:60%"></b><b style="left:80%"></b><b class="last" style="left:100%"></b></div><span>沼の底 1000m</span></div>
+      <div class="sheet">
+        <p>めざすは<b>沼の底、深さ1000m</b>。200mごとのボスを倒し、底にひそむ「プラシーボ」を消し去ろう。攻撃は自動。あなたは、なぞって動くだけ。</p>
+        <div class="lbl">出発するイヤホン</div>
+        <div class="starters" id="starters"></div>
+        <div class="btns"><button class="go" id="start" type="button">沼に入る</button><span class="note" id="bestNote"></span></div>
+        <details><summary>遊び方</summary>
+          <ul class="how">
+            <li><b>動かす</b></li><li>画面をなぞる（PCは WASD か矢印キー）</li>
+            <li><b>コンボ</b></li><li>ノイズを続けて消すと経験値アップ。伸ばすとフィーバー</li>
+            <li><b>覚醒</b></li><li>ドライバーを Lv5、相性のいい機材を Lv3 にすると進化</li>
+            <li><b>福袋</b></li><li>金ぶちの高級ノイズやボス、ミッション達成で手に入る</li>
+          </ul>
+        </details>
+        <details><summary id="achSum">実績</summary><ul class="ach" id="achList"></ul></details>
+      </div>
     </div>
   </div>
 
