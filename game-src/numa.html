@@ -182,6 +182,7 @@ summary{cursor:pointer;font-weight:900}
 .b.sp{background:var(--red);border-color:var(--red);font-variant-numeric:tabular-nums}
 .b.s{background:linear-gradient(120deg,#1b1140,#4b2a8a,#1b1140);color:var(--yellow);border-color:var(--yellow)}
 .b.g{border-color:var(--pink);border-style:dashed}
+.b.set{background:var(--mint);color:var(--ink);border-color:var(--paper)}
 .call{position:absolute;left:0;right:0;top:41%;text-align:center;font-family:var(--display);font-weight:400;font-size:clamp(26px,8.5vw,56px);line-height:1.1;color:var(--paper);-webkit-text-stroke:8px var(--ink);paint-order:stroke fill;pointer-events:none;opacity:0;padding-inline:16px;text-wrap:balance}
 .call.show{animation:callpop 1s both}
 @keyframes callpop{0%{transform:scale(2.4) rotate(-6deg);opacity:0}14%{transform:scale(1) rotate(-3deg);opacity:1}72%{transform:scale(1) rotate(-3deg);opacity:1}100%{transform:translateY(-34px) rotate(-3deg);opacity:0}}
@@ -279,7 +280,10 @@ summary{cursor:pointer;font-weight:900}
             <ul class="how">
               <li><b>動かす</b></li><li>画面をなぞる（PCは WASD か矢印キー）</li>
               <li><b>コンボ</b></li><li>ノイズを続けて消すと経験値アップ。伸ばすとフィーバー</li>
-              <li><b>覚醒</b></li><li>ドライバーを Lv5、相性のいい機材を Lv3 にすると進化</li>
+              <li><b>覚醒</b></li><li>ドライバーを Lv5、相方の機材を Lv3 にすると進化</li>
+              <li><b>分岐</b></li><li>覚醒は、育てた相方によって2つのルートに分かれる</li>
+              <li><b>枠</b></li><li>ドライバーは4種、それ以外は7種まで。何を選ぶかで構成が変わる</li>
+              <li><b>セット</b></li><li>ケーブル3種、イヤーピース3種などをそろえると効果が付く</li>
               <li><b>超覚醒</b></li><li>覚醒したドライバーの相方を Lv5 にすると、現実にはありえない姿へ</li>
               <li><b>福袋</b></li><li>金ぶちの高級ノイズやボス、ミッション達成で手に入る</li>
             </ul>
@@ -295,6 +299,7 @@ summary{cursor:pointer;font-weight:900}
       <h2>どれを買い足す？</h2>
       <div class="cards" id="cards"></div>
       <div class="btns"><button class="sub" id="reroll" type="button">別の店を見る</button><span class="note" id="rerollNote"></span></div>
+      <div class="lbl" id="slotNote"></div>
       <div class="note" id="evoHint"></div>
     </div>
   </div>
@@ -366,17 +371,48 @@ const ITEMS=[
  {id:'foam',s:'イヤピ',cat:'イヤーピース',c:2,name:'低反発イヤーピース',price:2480,desc:()=>'受けるダメージ −10%',quote:'イヤピ沼は、浅く見えて深い。'},
  {id:'hires',s:'ポタアン',cat:'上流',c:2,name:'ポータブルアンプ',price:33000,desc:()=>'経験値 +12%、音符を拾える距離 +15%',quote:'スマホ直挿しには、もう戻れない。'},
  {id:'case',s:'ケース',cat:'アクセサリー',c:2,name:'セミハードケース',price:3980,desc:()=>'体力の上限 +20、その場で 20 回復',quote:'断線の不安から解放された。'},
+ {id:'pz',s:'圧電',cat:'ドライバー',c:1,name:'圧電ドライバー（ピエゾ）',price:24800,desc:l=>'高域の刃が '+(1+l)+' 枚、まわりを回り続ける',quote:'シャリっとした高域がクセになる。'},
+ {id:'pr',s:'パッシブ',cat:'ドライバー',c:1,name:'パッシブラジエーター',price:19800,desc:()=>'歩いたあとに低音の地雷を置いていく',quote:'鳴っていないのに、鳴っている。'},
+ {id:'dap',s:'DAP',cat:'上流',c:2,name:'DAP（音楽プレーヤー）',price:89800,desc:()=>'クリティカルのダメージ +25%',quote:'スマホとは別に持ち歩く。重い。だが、それがいい。'},
+ {id:'dongle',s:'ドングル',cat:'上流',c:2,name:'ドングルDAC',price:12800,desc:()=>'攻撃の間隔 −5%、足の速さ +2%',quote:'小さいのに、ちゃんと違う。'},
+ {id:'tube',s:'真空管',cat:'上流',c:2,name:'真空管アンプ',price:64800,desc:()=>'与えるダメージ +5%、体力が毎秒 0.4 回復',quote:'音が暖かい。本体も暖かい。'},
+ {id:'pure',s:'純銀線',cat:'リケーブル',c:0,name:'純銀線ケーブル',price:38000,desc:()=>'クリティカル率 +5%',quote:'高域がキラッとする。財布もキラッと減る。'},
+ {id:'gsilver',s:'金銀線',cat:'リケーブル',c:0,name:'金メッキ銀線ケーブル',price:52000,desc:()=>'経験値 +8%',quote:'もはや宝飾品。'},
+ {id:'sil',s:'シリコン',cat:'イヤーピース',c:2,name:'シリコンイヤーピース',price:1280,desc:()=>'足の速さ +4%',quote:'サイズは左右で違う。人体は不思議。'},
+ {id:'dbl',s:'Wフランジ',cat:'イヤーピース',c:2,name:'ダブルフランジ',price:1980,desc:()=>'受けるダメージ −6%、被弾後の無敵 +0.1秒',quote:'奥まで入る。入りすぎる。'},
+ {id:'hook',s:'フック',cat:'アクセサリー',c:2,name:'イヤーフック',price:980,desc:l=>'触れてきたノイズに '+8*l+' の反撃ダメージ',quote:'走っても落ちない安心感。'},
+ {id:'nozzle',s:'ノズル',cat:'チューニング',c:0,name:'ノズルフィルター',price:2800,desc:()=>'攻撃の範囲 +6%',quote:'金・銀・黒。結局、黒に戻る。'},
+ {id:'clip',s:'クリップ',cat:'アクセサリー',c:2,name:'ケーブルクリップ',price:680,desc:()=>'被弾後の無敵 +0.15秒',quote:'タッチノイズが消えた。'},
+ {id:'dry',s:'乾燥剤',cat:'アクセサリー',c:2,name:'乾燥剤つき保管箱',price:1480,desc:()=>'体力の上限 +12、その場で 12 回復',quote:'湿気は、敵。'},
+ {id:'cloth',s:'クロス',cat:'アクセサリー',c:2,name:'クリーニングクロス',price:480,desc:()=>'音符を拾える距離 +12%、コンボが切れにくくなる',quote:'聴く前に、まず拭く。'},
  {id:'aging',s:'エージング',cat:'儀式',c:0,name:'エージング100時間',price:120,desc:()=>'体力が毎秒 0.5 ずつ回復（代金は電気代）',quote:'鳴らし込むほど音がほぐれる（諸説あり）。'}
 ];
 const BY={};ITEMS.forEach(i=>BY[i.id]=i);
-const DRIVERS=['ba','dd','pl','est','anc'],MAXLV=5;
+const DRIVERS=['ba','dd','pl','est','anc','pz','pr'],MAXLV=5,SLOT_D=4,SLOT_O=7;
+/* each driver awakens down one of two routes, decided by which partner you raised */
 const EVO={
- ba:{need:'silver',name:'片側12BAフラッグシップ',price:398000,desc:'追尾する12発を一斉に撃ち込む',quote:'片側12基。もう数えるのをやめた。'},
- dd:{need:'copper',name:'ベリリウム同軸デュアルDD',price:268000,desc:'二段の巨大な衝撃波。音符も吸い寄せる',quote:'鼓膜ではなく、頭ごと揺れる。'},
- pl:{need:'bal',name:'大口径14.5mm平面磁界',price:498000,desc:'四方へ、広がりながら進む振動板を撃ち出す',quote:'バランス接続にしたら化けた。'},
- est:{need:'hires',name:'クアッドEST',price:548000,desc:'2本の稲妻が枝分かれしながら連鎖する',quote:'聞こえない帯域まで聞こえる（気がする）。'},
- anc:{need:'foam',name:'フルレンジ骨伝導',price:328000,desc:'巨大な振動の輪。敵弾を消し、ノイズを凍らせる',quote:'頭蓋骨がスピーカーになった。'}
+ ba:[{need:'silver',name:'片側12BAフラッグシップ',price:398000,desc:'追尾する12発を一斉に撃ち込む',quote:'片側12基。もう数えるのをやめた。'},
+     {need:'dap',name:'カスタムIEM',price:428000,desc:'体力の多いノイズ3体を、貫通する一撃で狙い撃つ',quote:'耳型を採った。もう他人には貸せない。'}],
+ dd:[{need:'copper',name:'ベリリウム同軸デュアルDD',price:268000,desc:'二段の巨大な衝撃波。音符も吸い寄せる',quote:'鼓膜ではなく、頭ごと揺れる。'},
+     {need:'tube',name:'重低音チューン',price:298000,desc:'足もとに低音の沼を残す。入ったノイズは削られ、鈍る',quote:'低音が、床にたまっている。'}],
+ pl:[{need:'bal',name:'大口径14.5mm平面磁界',price:498000,desc:'四方へ、広がりながら進む振動板を撃ち出す',quote:'バランス接続にしたら化けた。'},
+     {need:'nozzle',name:'マイクロ平面ドライバー',price:458000,desc:'小さな振動板を、途切れなく連射する',quote:'小さいのに、ちゃんと平面の音がする。'}],
+ est:[{need:'hires',name:'クアッドEST',price:548000,desc:'2本の稲妻が枝分かれしながら連鎖する',quote:'聞こえない帯域まで聞こえる（気がする）。'},
+     {need:'pure',name:'リボンツイーター',price:528000,desc:'一直線の極太ビームで、列ごと焼き払う',quote:'高域が、まっすぐ刺さる。'}],
+ anc:[{need:'foam',name:'フルレンジ骨伝導',price:328000,desc:'巨大な振動の輪。敵弾を消し、ノイズを凍らせる',quote:'頭蓋骨がスピーカーになった。'},
+     {need:'hook',name:'接触型トランスデューサー',price:308000,desc:'体当たりで大ダメージ。接触で受けるダメージは半分',quote:'耳に当てるのではない。ぶつける。'}],
+ pz:[{need:'dongle',name:'超音波トランスデューサー',price:368000,desc:'8枚の刃が、伸び縮みしながら高速で回る',quote:'コウモリにしか聞こえない帯域が出ている。'}],
+ pr:[{need:'case',name:'密閉型サブウーファー箱',price:288000,desc:'地雷が巨大化し、誘爆する',quote:'箱鳴りも、音のうち。'}]
 };
+const EV=id=>EVO[id][evo[id]==='b'?1:0],evoE=id=>sup[id]?2:evo[id]==='b'?3:evo[id]?1:0;
+const SETS=[
+ {id:'cable',name:'リケーブル沼',of:['silver','copper','pure','gsilver'],n:3,desc:'攻撃の間隔 −12%'},
+ {id:'up',name:'上流沼',of:['dap','dongle','tube','hires'],n:3,desc:'クリティカル率 +10%'},
+ {id:'tips',name:'イヤピ沼',of:['foam','sil','dbl'],n:3,desc:'被弾後の無敵 +0.6秒、受けるダメージ −10%'},
+ {id:'care',name:'几帳面',of:['case','dry','cloth','clip'],n:3,desc:'体力が毎秒 1 回復'},
+ {id:'multi',name:'多ドラ',n:4,desc:'攻撃の範囲 +15%'},
+ {id:'solo',name:'一点豪華',n:1,desc:'ドライバー1種だけで覚醒：ダメージ2倍'}
+];
 /* super-awakenings and one-off gag gear: none of these could exist, which is the joke */
 const SUP={
  ba:{name:'片側100BA',price:98000000,desc:'画面を埋める弾幕を撃ち続ける',quote:'もはやイヤホンの形をしていない。'},
@@ -404,7 +440,7 @@ const STARTERS=[
  {id:'tws',name:'耳掛けステージモニター',desc:'骨伝導搭載／足が速い',ok:m=>m.best>=600,cond:'600m 到達で解放'},
  {id:'open',name:'開放型イヤホン',desc:'平面磁界／範囲+25%／被ダメ+25%（音漏れ）',ok:m=>m.clears>=1,cond:'沼の底の制覇で解放'}
 ];
-const ACH=[['d200','200m に到達'],['d600','600m に到達'],['clear','沼の底を制覇'],['combo100','100 コンボ'],['fever3','1回のダイブでフィーバー3回'],['evo1','はじめての覚醒'],['evoAll','5種すべてを覚醒（通算）'],['spend1m','1回で100万円を散財'],['jackpot','福袋で大当たり'],['tribrid','ドライバーを3種以上積む'],['nohit','ボスを無傷で撃破'],['donshari','ドンシャリで400m 到達'],['sup1','はじめての超覚醒'],['gag5','ありえない機材を1回で5つ'],['spend100m','1回で1億円を散財'],['runs10','10回もぐる'],['rich','生涯の散財が10億円'],['zukan','図鑑を25種うめる'],['daily3','本日の沼に3日連続で挑む'],['lv3','沼レベル3を制覇'],['lv5','沼レベル5を制覇']];
+const ACH=[['d200','200m に到達'],['d600','600m に到達'],['clear','沼の底を制覇'],['combo100','100 コンボ'],['fever3','1回のダイブでフィーバー3回'],['evo1','はじめての覚醒'],['evoAll','5種すべてを覚醒（通算）'],['spend1m','1回で100万円を散財'],['jackpot','福袋で大当たり'],['tribrid','ドライバーを3種以上積む'],['nohit','ボスを無傷で撃破'],['donshari','ドンシャリで400m 到達'],['sup1','はじめての超覚醒'],['gag5','ありえない機材を1回で5つ'],['spend100m','1回で1億円を散財'],['runs10','10回もぐる'],['rich','生涯の散財が10億円'],['zukan','図鑑を25種うめる'],['daily3','本日の沼に3日連続で挑む'],['lv3','沼レベル3を制覇'],['lv5','沼レベル5を制覇'],['branch','もうひとつの覚醒ルートを見つける'],['set3','セット効果を1回で3つそろえる']];
 /* things that carry over between dives */
 const UPG=[
  {id:'hp',name:'耳のスタミナ',desc:l=>'最大体力 +'+10*l,max:5,cost:[40,90,160,260,400]},
@@ -458,20 +494,34 @@ const DRAW={
  g_tsumi:g=>{for(const [x,y,w] of [[10,40,44],[14,24,36],[20,8,26]]){g.fillStyle='#c9a36a';g.beginPath();rr(g,x,y,w,16,2);g.fill();g.stroke();g.fillStyle='#e8d3a8';g.fillRect(x+w/2-3,y+2,6,12);}},
  g_rev:g=>{g.fillStyle=K.paper;g.beginPath();rr(g,12,6,40,52,4);g.fill();g.stroke();g.lineWidth=3;for(const y of [18,27,36,45]){g.beginPath();g.moveTo(20,y);g.lineTo(y===45?34:44,y);g.stroke();}},
  g_agari:g=>{g.lineWidth=5;g.beginPath();g.moveTo(16,8);g.lineTo(16,58);g.stroke();g.lineWidth=4;g.fillStyle=K.red;g.beginPath();g.moveTo(16,10);g.lineTo(54,20);g.lineTo(16,34);g.closePath();g.fill();g.stroke();},
+ pz:g=>{g.fillStyle=K.sky;g.beginPath();g.moveTo(32,4);g.lineTo(48,20);g.lineTo(42,56);g.lineTo(22,56);g.lineTo(16,20);g.closePath();g.fill();g.stroke();g.fillStyle='#e6f0ff';g.beginPath();g.moveTo(32,4);g.lineTo(32,56);g.lineTo(22,56);g.lineTo(16,20);g.closePath();g.fill();g.lineWidth=2.5;g.stroke();},
+ pr:g=>{g.fillStyle='#8b96a3';g.beginPath();g.ellipse(32,32,26,20,0,0,TAU);g.fill();g.stroke();g.lineWidth=3;g.fillStyle='#c5ced6';g.beginPath();g.ellipse(32,32,17,13,0,0,TAU);g.fill();g.stroke();g.beginPath();g.ellipse(32,32,8,6,0,0,TAU);g.stroke();},
+ dap:g=>{g.fillStyle='#2f3742';g.beginPath();rr(g,14,4,36,56,6);g.fill();g.stroke();g.fillStyle=K.mint;g.beginPath();rr(g,19,9,26,26,3);g.fill();g.lineWidth=2.5;g.stroke();g.fillStyle='#dfe6ea';g.beginPath();g.arc(32,47,7,0,TAU);g.fill();g.stroke();},
+ dongle:g=>{g.lineWidth=7;g.beginPath();g.moveTo(32,26);g.lineTo(32,12);g.stroke();g.lineWidth=3;g.strokeStyle='#dfe6ea';g.stroke();g.strokeStyle=K.ink;g.lineWidth=4;g.fillStyle='#dfe6ea';g.beginPath();rr(g,26,2,12,12,3);g.fill();g.stroke();g.fillStyle='#3c5a78';g.beginPath();rr(g,18,26,28,32,6);g.fill();g.stroke();g.fillStyle=K.yellow;g.beginPath();g.arc(32,42,4,0,TAU);g.fill();},
+ tube:g=>{g.fillStyle='#4a525c';g.beginPath();rr(g,16,44,32,14,3);g.fill();g.stroke();g.fillStyle='#fff3c4';g.beginPath();g.moveTo(20,44);g.lineTo(20,20);g.bezierCurveTo(20,2,44,2,44,20);g.lineTo(44,44);g.closePath();g.fill();g.stroke();g.fillStyle='#ff9d3c';g.beginPath();rr(g,27,22,10,20,3);g.fill();g.lineWidth=2.5;g.stroke();},
+ pure:cableIcon('#ffffff','#b9c6d0'),gsilver:cableIcon('#ffe08a','#c9963a'),
+ sil:g=>{g.fillStyle='#2aa586';g.beginPath();rr(g,25,36,14,20,3);g.fill();g.stroke();g.fillStyle=K.mint;g.beginPath();g.moveTo(10,42);g.bezierCurveTo(10,8,54,8,54,42);g.lineTo(43,42);g.lineTo(43,36);g.lineTo(21,36);g.lineTo(21,42);g.closePath();g.fill();g.stroke();g.fillStyle='#e6fff7';g.beginPath();g.ellipse(24,22,5,3,-.7,0,TAU);g.fill();},
+ dbl:g=>{g.fillStyle='#7a8794';for(const [y,w] of [[36,24],[18,18]]){g.beginPath();g.moveTo(32-w,y+14);g.bezierCurveTo(32-w,y-10,32+w,y-10,32+w,y+14);g.closePath();g.fill();g.stroke();}g.fillStyle='#3c444d';g.beginPath();rr(g,26,50,12,10,2);g.fill();g.stroke();},
+ hook:g=>{g.lineWidth=11;g.beginPath();g.arc(30,28,17,-2.6,1.5);g.lineTo(30,58);g.stroke();g.lineWidth=5;g.strokeStyle='#dfe6ea';g.stroke();g.strokeStyle=K.ink;g.lineWidth=4;},
+ nozzle:g=>{g.fillStyle='#c9a36a';g.beginPath();rr(g,14,22,36,28,5);g.fill();g.stroke();g.fillStyle='#e8eef1';g.beginPath();g.ellipse(32,22,18,9,0,0,TAU);g.fill();g.stroke();g.fillStyle=K.ink;for(const [x,y] of [[25,21],[32,19],[39,21],[28,25],[36,25]]){g.beginPath();g.arc(x,y,1.8,0,TAU);g.fill();}},
+ clip:g=>{g.fillStyle=K.pink;g.beginPath();g.moveTo(10,14);g.lineTo(44,26);g.lineTo(44,38);g.lineTo(10,50);g.closePath();g.fill();g.stroke();g.fillStyle='#dfe6ea';g.beginPath();g.arc(48,32,8,0,TAU);g.fill();g.stroke();g.lineWidth=3;g.beginPath();g.moveTo(14,32);g.lineTo(40,32);g.stroke();},
+ dry:g=>{g.fillStyle='#f4f7f9';g.beginPath();rr(g,12,8,40,48,4);g.fill();g.stroke();g.lineWidth=2.5;g.setLineDash([3,4]);g.beginPath();g.moveTo(12,16);g.lineTo(52,16);g.moveTo(12,48);g.lineTo(52,48);g.stroke();g.setLineDash([]);g.fillStyle=K.sky;g.font='900 20px sans-serif';g.textAlign='center';g.fillText('乾',32,40);},
+ cloth:g=>{g.fillStyle=K.sky;g.beginPath();g.moveTo(8,12);g.lineTo(56,10);g.lineTo(54,40);g.lineTo(40,56);g.lineTo(10,54);g.closePath();g.fill();g.stroke();g.fillStyle='#cfe0ff';g.beginPath();g.moveTo(54,40);g.lineTo(40,56);g.lineTo(40,42);g.closePath();g.fill();g.lineWidth=3;g.stroke();},
  save:g=>{g.fillStyle=K.yellow;g.beginPath();g.arc(32,32,24,0,TAU);g.fill();g.stroke();g.fillStyle=K.ink;g.font='900 30px sans-serif';g.textAlign='center';g.fillText('¥',32,43);}
 };
 const IC={},IU={};
 function mkIcon(id,E){
-  E=E===2?2:E?1:0;const key=id+E;if(IC[key])return IC[key];const c=document.createElement('canvas');c.width=c.height=192;const g=c.getContext('2d');g.scale(3,3);g.lineJoin=g.lineCap='round';g.lineWidth=4;g.strokeStyle=K.ink;
+  E=E===2?2:E===3?3:E?1:0;const key=id+E;if(IC[key])return IC[key];const c=document.createElement('canvas');c.width=c.height=192;const g=c.getContext('2d');g.scale(3,3);g.lineJoin=g.lineCap='round';g.lineWidth=4;g.strokeStyle=K.ink;
   const star=(n,r0,r1,col)=>{g.fillStyle=col;g.beginPath();for(let i=0;i<n*2;i++){const a=i/(n*2)*TAU-Math.PI/2,r=i%2?r1:r0;g.lineTo(32+Math.cos(a)*r,32+Math.sin(a)*r);}g.closePath();g.fill();g.lineWidth=3;g.stroke();};
-  if(E){if(E===2)star(8,31,21,K.pink);star(12,E===2?27:31,E===2?20:24,K.yellow);g.fillStyle=K.paper;g.beginPath();g.arc(32,32,E===2?17:20,0,TAU);g.fill();g.lineWidth=4;const k=E===2?.47:.56;g.translate(32,32);g.scale(k,k);g.translate(-32,-32);}
+  if(E){if(E===2)star(8,31,21,K.pink);star(12,E===2?27:31,E===2?20:24,E===3?K.mint:K.yellow);g.fillStyle=K.paper;g.beginPath();g.arc(32,32,E===2?17:20,0,TAU);g.fill();g.lineWidth=4;const k=E===2?.47:.56;g.translate(32,32);g.scale(k,k);g.translate(-32,-32);}
   (DRAW[id]||DRAW.save)(g);return IC[key]=c;
 }
-function iconImg(id,E){E=E===2?2:E?1:0;const key=id+E;if(!IU[key])IU[key]=mkIcon(id,E).toDataURL();const im=document.createElement('img');im.src=IU[key];im.alt='';im.className='ic';return im;}
+function iconImg(id,E){E=E===2?2:E===3?3:E?1:0;const key=id+E;if(!IU[key])IU[key]=mkIcon(id,E).toDataURL();const im=document.createElement('img');im.src=IU[key];im.alt='';im.className='ic';return im;}
 
 /* ---------- saved progress ---------- */
 let META={best:0,clears:0,ach:{},evo:{},sup:{},starter:'std',pts:0,up:{},lv:1,maxLv:1,seen:{},streak:0,lastDay:''};
 try{const m=JSON.parse(localStorage.getItem('numa-meta')||'null');if(m)Object.assign(META,m);const o=+(localStorage.getItem('numa-best')||0);if(o>META.best)META.best=o;}catch(e){}
+for(const d of ['ba','dd','pl','est','anc'])if(META.seen['E:'+d]){META.seen['E:'+d+':a']=1;delete META.seen['E:'+d];}
 META.st=Object.assign({runs:0,kills:0,spend:0,combo:0,fast:0,by:{},boss:{}},META.st||{});META.daily=Object.assign({date:'',best:0,played:false},META.daily||{});
 const U=id=>META.up[id]||0;
 function save(){try{localStorage.setItem('numa-meta',JSON.stringify(META));}catch(e){}}
@@ -480,15 +530,19 @@ function save(){try{localStorage.setItem('numa-meta',JSON.stringify(META));}catc
 const G={state:'menu',t:0,d:0,kills:0,spend:0,sale:false,level:1,xp:0,need:7,pending:0,spawnT:0,eliteT:35,eventT:30,bossI:0,loop:0,endless:false,
   shake:0,flash:0,freeze:0,music:true,combo:0,comboT:0,maxCombo:0,nextFever:30,fever:0,fevers:0,demo:0,reroll:2,tier:0,cleared:false,mission:null,bossHit:false};
 const P={x:0,y:0,hp:100,max:100,inv:0,fx:0,fy:1,walk:0,spd:1,taken:1,area:1,starter:'std'};
-let lv={},evo={},sup={},gag={},trail=[],cd={},enemies=[],shots=[],ebul=[],gems=[],drops=[],parts=[],texts=[],rings=[],bolts=[],stars=[],laters=[];
+let lv={},evo={},sup={},gag={},trail=[],zones=[],beams=[],mines=[],cd={},enemies=[],shots=[],ebul=[],gems=[],drops=[],parts=[],texts=[],rings=[],bolts=[],stars=[],laters=[];
 const L=id=>lv[id]||0,isEvo=id=>!!evo[id]||(G.demo>0&&L(id)>0),isSup=id=>!!sup[id];
 const depth=()=>Math.floor(G.d),zoneI=()=>Math.min(4,Math.floor(G.d/200)%5+(G.d>=1000&&!G.endless?4:0));
 const total=()=>ITEMS.reduce((s,i)=>s+L(i.id),0)+3*Object.keys(evo).length+6*Object.keys(sup).length+2*Object.keys(gag).length;
 const power=()=>Math.round(72+total()*1.5);
-const mulDmg=()=>(1+.12*L('copper'))*(gag.g_sc?1.35:1)*(1+.06*U('dmg'))*(G.mod&&G.mod.glass?1.5:1),mulCd=()=>Math.pow(.92,L('silver'))*(G.fever>0?.7:1)*(G.demo>0?.75:1)*(gag.g_128?.8:1),mulArea=()=>(1+.1*L('bal'))*P.area*(gag.g_44?1.3:1);
+const SET=id=>!!(G.sets&&G.sets[id]),drvN=()=>DRIVERS.filter(d=>L(d)).length,othN=()=>ITEMS.filter(i=>i.c!==1&&L(i.id)).length;
+function calcSets(){const o={},n=drvN();for(const st of SETS){if(st.of)o[st.id]=st.of.filter(i=>L(i)).length>=st.n;}o.multi=n>=4;o.solo=n===1&&DRIVERS.some(d=>evo[d]);return o;}
+const mulDmg=()=>(1+.12*L('copper'))*(1+.05*L('tube'))*(gag.g_sc?1.35:1)*(1+.06*U('dmg'))*(G.mod&&G.mod.glass?1.5:1)*(SET('solo')?2:1),
+  mulCd=()=>Math.pow(.92,L('silver'))*Math.pow(.95,L('dongle'))*(G.fever>0?.7:1)*(G.demo>0?.75:1)*(gag.g_128?.8:1)*(SET('cable')?.88:1),
+  mulArea=()=>(1+.1*L('bal'))*(1+.06*L('nozzle'))*P.area*(gag.g_44?1.3:1)*(SET('multi')?1.15:1);
 const bossAlive=()=>enemies.some(e=>e.boss&&e.hp>0);
 
-function bands(){const e=id=>sup[id]?7:evo[id]?3:0;return {low:L('dd')+e('dd')+.4*L('copper')+.2*L('anc'),mid:.8*L('ba')+e('ba')+.6*L('pl')+e('pl')*.5,high:L('est')+e('est')+.4*L('silver')+.4*L('pl')+.2*L('hires')};}
+function bands(){const e=id=>sup[id]?7:evo[id]?3:0;return {low:L('dd')+e('dd')+L('pr')+e('pr')+.4*L('copper')+.3*L('tube')+.2*L('anc'),mid:.8*L('ba')+e('ba')+.6*L('pl')+e('pl')*.5+.3*L('gsilver')+.2*L('dap'),high:L('est')+e('est')+.8*L('pz')+e('pz')+.4*L('silver')+.4*L('pure')+.4*L('pl')+.2*L('hires')};}
 function toneName(){const b=bands(),s=b.low+b.mid+b.high;
   if(s<1.6)return '付属イヤホンの音';
   if(b.low>b.mid*1.3&&b.high>b.mid*1.3)return 'ドンシャリ';
@@ -496,8 +550,8 @@ function toneName(){const b=bands(),s=b.low+b.mid+b.high;
   if(b.low>b.mid*1.3&&b.low>b.high*1.3)return '低音ホリック';
   if(b.high>b.mid*1.3&&b.high>b.low*1.3)return '高域キラキラ（刺さり注意）';
   return 'フラット（モニター系）';}
-function buildName(){const p=[];for(const id of ['ba','dd','pl','est'])if(L(id))p.push(sup[id]?SUP[id].name:evo[id]?EVO[id].name:L(id)+BY[id].s);
-  const n=p.length,kind=['','','ハイブリッド','トライブリッド','クアッドブリッド'][n]||'';return (p.join('+')||'ドライバーなし')+(L('anc')?'+'+(sup.anc?SUP.anc.name:evo.anc?EVO.anc.name:L('anc')+'BC'):'')+(kind?'（'+kind+'）':'');}
+function buildName(){const p=[];for(const id of ['ba','dd','pl','est','pz','pr'])if(L(id))p.push(sup[id]?SUP[id].name:evo[id]?EV(id).name:L(id)+BY[id].s);
+  const n=p.length,kind=['','','ハイブリッド','トライブリッド','クアッドブリッド'][n]||'';return (p.join('+')||'ドライバーなし')+(L('anc')?'+'+(sup.anc?SUP.anc.name:evo.anc?EV('anc').name:L('anc')+'BC'):'')+(kind?'（'+kind+'）':'');}
 function rankName(d){return G.cleared?(G.endless?'底なしの求道者':'沼の底の制覇者'):d<100?'入門者（まだ引き返せる）':d<300?'中級者（もう戻れない）':d<500?'沼の住人':d<800?'沼の主':'あと一歩の人';}
 const TIERS=['付属品クラス','エントリークラス','ミドルクラス','ハイエンド','フラッグシップ'];
 const tierOf=()=>{const t=total();return t<4?0:t<9?1:t<16?2:t<26?3:4;};
@@ -598,8 +652,9 @@ let spEl=null;
 function buildBar(newId){
   const box=$('build');box.textContent='';const add=(t,c,ic)=>{const s=document.createElement('span');s.className='b '+c;if(ic)s.appendChild(ic);s.appendChild(document.createTextNode(t));box.appendChild(s);return s;};
   add('音圧 '+power()+'dB','pw'+(newId?' new':''));spEl=add('散財 '+yen(G.spShown||0),'sp');
-  const few=ITEMS.filter(i=>L(i.id)).length+Object.keys(gag).length<=8;
-  for(const it of ITEMS){const l=L(it.id);if(!l)continue;const e=sup[it.id]?2:evo[it.id]?1:0;add(few?(e===2?SUP[it.id].name:e?EVO[it.id].name:it.s+' '+l):e?'':String(l),(e===2?'s':e?'e':it.c===1?'d':'a')+(newId===it.id?' new':''),iconImg(it.id,e));}
+  const few=ITEMS.filter(i=>L(i.id)).length+Object.keys(gag).length<=7;
+  for(const it of ITEMS){const l=L(it.id);if(!l)continue;const e=evoE(it.id);add(few?(e===2?SUP[it.id].name:e?EV(it.id).name:it.s+' '+l):e?'':String(l),(e===2?'s':e?'e':it.c===1?'d':'a')+(newId===it.id?' new':''),iconImg(it.id,e));}
+  for(const st of SETS)if(SET(st.id))add(st.name,'set');
   for(const g of GAGS)if(gag[g.id])add(few?g.s:'','g'+(newId===g.id?' new':''),iconImg(g.id));
 }
 function call(t,c){const e=$('call');e.textContent=t;e.style.color=c||'';e.classList.remove('show');void e.offsetWidth;e.classList.add('show');sfx('call');}
@@ -644,14 +699,14 @@ function spawnBoss(def){
 function shootAt(x,y,a,sp){if(ebul.length<220)ebul.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,t:7});}
 function ringShot(e,n,sp,off){for(let i=0;i<n;i++)shootAt(e.x,e.y,off+i/n*TAU,sp);}
 function hit(e,d,x,noCrit){
-  if(e.hp<=0)return;d*=mulDmg();const crit=!noCrit&&R()<.05+.06*L('gold')+(G.fever>0?.1:0);if(crit)d*=2.6;
+  if(e.hp<=0)return;d*=mulDmg();const crit=!noCrit&&R()<.05+.06*L('gold')+.05*L('pure')+(SET('up')?.1:0)+(G.fever>0?.1:0);if(crit)d*=2.6+.25*L('dap');
   e.hp-=d;G.dmg+=d;G.dmgW+=d;e.fl=.09;e.sq=.12;
   if(crit){float(e.x,e.y-e.r,'-'+Math.round(d)+'dB!',K.yellow,true);sfx('crit',e.x);burst(e.x,e.y,K.yellow,5,160);}else if(texts.length<26)float(e.x,e.y-e.r,'-'+Math.max(1,Math.round(d))+'dB',K.paper);
   if(e.hp<=0)kill(e);
 }
 function kill(e){
   const T=e.boss||TYPES[e.type];G.kills++;G.mkN++;if(rings.length<26)rings.push({x:e.x,y:e.y,r:e.r*2.4,t:.2,m:.2,c:T.c,w:3});
-  if(e.type!=='ghost'&&e.type!=='mini'){G.combo++;G.comboT=Math.max(.7,2-G.combo/160);if(G.combo>G.maxCombo)G.maxCombo=G.combo;const c=$('combo');c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');
+  if(e.type!=='ghost'&&e.type!=='mini'){G.combo++;G.comboT=Math.max(.7,2-G.combo/160)*(1+.1*L('cloth'));if(G.combo>G.maxCombo)G.maxCombo=G.combo;const c=$('combo');c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');
     if(G.combo>=100)award('combo100');if(CALLS[G.combo])call(CALLS[G.combo]);if(G.combo>=G.nextFever){G.nextFever=G.nextFever*2+50;fever();}}
   sfx('kill',e.x);burst(e.x,e.y,T.c,e.boss?70:e.elite?26:7,e.boss?320:e.elite?220:120);
   if(e.type==='ghost'){float(e.x,e.y,'気のせいだった',K.paper);return;}
@@ -675,52 +730,61 @@ function bossDown(e){
   banner(b.name+' 撃破',G.endless?'さらに深くへ':'第'+(zoneI()+1)+'層「'+ZONES[zoneI()]+'」へ','');
 }
 function hurt(d){
-  if(P.inv>0||G.state!=='play')return;d*=(1-.1*L('foam'))*(gag.g_met?.75:1)*P.taken*(1+zoneI()*.22+G.loop*.6)*(G.dmgM||1);P.hp-=d;P.inv=.8;shake(.35);G.freeze=.07;G.flash=Math.max(G.flash,.25);sfx('hurt');float(P.x,P.y-26,'耳が痛い',K.pink,true);
+  if(P.inv>0||G.state!=='play')return;d*=(1-.1*L('foam'))*(1-.06*L('dbl'))*(SET('tips')?.9:1)*(evo.anc==='b'?.5:1)*(gag.g_met?.75:1)*P.taken*(1+zoneI()*.22+G.loop*.6)*(G.dmgM||1);P.hp-=d;P.inv=.8+.1*L('dbl')+.15*L('clip')+(SET('tips')?.6:0);shake(.35);G.freeze=.07;G.flash=Math.max(G.flash,.25);sfx('hurt');float(P.x,P.y-26,'耳が痛い',K.pink,true);
   G.bossHit=true;if(G.mission&&G.mission.k==='nohit')endMission(false);
   if(P.hp<=0){if(G.revive>0){G.revive--;P.hp=P.max*.5;P.inv=2.5;G.flash=1;banner('予備のイヤホンに付け替えた','まだ、もぐれる','mint');sfx('evo');rings.push({x:P.x,y:P.y,r:viewR(),t:.6,m:.6,c:K.mint,w:12});ebul=[];for(const e of enemies.slice())if(!e.boss)hit(e,e.max,0,true);}else{P.hp=0;gameOver();}}
 }
 function fever(){G.fever=6;G.fevers++;banner('フィーバー！',G.combo+' コンボ　攻撃が加速し、音符をぜんぶ吸い寄せる','pink');sfx('fever');G.flash=.6;for(const g of gems)g.pull=true;if(G.fevers>=3)award('fever3');}
 
 /* ---------- growth ---------- */
-function gainXp(v){G.xp+=v*(1+.06*U('xp'))*(G.mod.rich?1.5:1)*(1+.12*L('hires'))*(1+Math.min(.5,G.combo/200));while(G.xp>=G.need){G.xp-=G.need;G.level++;G.need=Math.round(4+G.level*3.5+G.level*G.level*.9);G.pending++;}}
-const evoReady=()=>DRIVERS.filter(id=>L(id)>=MAXLV&&!evo[id]&&L(EVO[id].need)>=3);
-const upgradable=()=>ITEMS.filter(i=>L(i.id)<MAXLV);
+function gainXp(v){G.xp+=v*(1+.08*L('gsilver'))*(1+.06*U('xp'))*(G.mod.rich?1.5:1)*(1+.12*L('hires'))*(1+Math.min(.5,G.combo/200));while(G.xp>=G.need){G.xp-=G.need;G.level++;G.need=Math.round(4+G.level*3.5+G.level*G.level*.9);G.pending++;}}
+const evoReady=()=>{const a=[];for(const id of DRIVERS)if(L(id)>=MAXLV&&!evo[id])EVO[id].forEach((b,i)=>{if(L(b.need)>=3)a.push({id,br:i?'b':'a'});});return a;};
+const upgradable=()=>{const nd=drvN(),no=othN();return ITEMS.filter(i=>L(i.id)<MAXLV&&(L(i.id)>0||(i.c===1?nd<SLOT_D:no<SLOT_O)));};
 function apply(it,n){
-  if(it.id!=='save')META.seen[it.sup?'S:'+it.id:it.evo?'E:'+it.id:it.id]=1;
+  if(it.id!=='save')META.seen[it.sup?'S:'+it.id:it.evo?'E:'+it.id+':'+it.br:it.id]=1;
   if(it.sup){sup[it.id]=1;META.sup[it.id]=1;save();award('sup1');G.evoQ.push({id:it.id,sup:true});}
-  else if(it.evo){evo[it.id]=1;META.evo[it.id]=1;save();award('evo1');if(DRIVERS.every(d=>META.evo[d]))award('evoAll');G.evoQ.push({id:it.id});}
+  else if(it.evo){evo[it.id]=it.br;META.evo[it.id]=1;save();award('evo1');if(it.br==='b')award('branch');if(['ba','dd','pl','est','anc'].every(d=>META.evo[d]))award('evoAll');G.evoQ.push({id:it.id});}
   else if(it.gag){if(!it.again)gag[it.id]=1;
     if(it.id==='g_gold'){P.max+=80;P.hp+=80;}else if(it.id==='g_twin')G.xp=Math.max(G.xp,G.need*.5);else if(it.id==='g_rev')G.reroll+=3;else if(it.id==='g_agari'){P.hp=P.max;G.agari=true;}
     if(Object.keys(gag).length>=5)award('gag5');}
   else if(it.id==='save')P.hp=Math.min(P.max,P.hp+30);
-  else{lv[it.id]=Math.min(MAXLV,L(it.id)+(n||1));if(it.id==='case'){P.max+=20*(n||1);P.hp=Math.min(P.max,P.hp+20*(n||1));}}
+  else{const add=Math.min(MAXLV,L(it.id)+(n||1))-L(it.id);lv[it.id]=L(it.id)+add;const hpUp={case:20,dry:12}[it.id];if(hpUp){P.max+=hpUp*add;P.hp=Math.min(P.max,P.hp+hpUp*add);}}
+  {const was=G.sets||{},now=calcSets();G.sets=now;const got=SETS.filter(st=>now[st.id]&&!was[st.id]);if(got.length){banner('セット効果：'+got[0].name,got[0].desc,'mint');sfx('tier');burst(P.x,P.y,K.mint,26,220);}if(SETS.filter(st=>now[st.id]).length>=3)award('set3');}
   drawFR($('fr'));buildBar(it.id);
   if(DRIVERS.filter(d=>L(d)).length>=3)award('tribrid');
   const t=tierOf();if(t>G.tier){G.tier=t;if(!it.evo&&!it.sup){banner('グレードアップ',TIERS[t]+' になった','mint');sfx('tier');}burst(P.x,P.y,K.mint,30,240);}
 }
-const supReady=()=>DRIVERS.filter(id=>evo[id]&&!sup[id]&&L(EVO[id].need)>=MAXLV);
+const supReady=()=>DRIVERS.filter(id=>SUP[id]&&evo[id]==='a'&&!sup[id]&&L(EVO[id][0].need)>=MAXLV);
 const gagPool=()=>GAGS.filter(g=>!gag[g.id]);
 const supCard=id=>({id,sup:true,cat:'超覚醒',c:5,name:SUP[id].name,price:SUP[id].price,desc:()=>SUP[id].desc,quote:SUP[id].quote});
-const evoCard=id=>({id,evo:true,cat:'覚醒',c:3,name:EVO[id].name,price:EVO[id].price,desc:()=>EVO[id].desc,quote:EVO[id].quote});
+const evoCard=q=>{const b=EVO[q.id][q.br==='b'?1:0];return {id:q.id,br:q.br,evo:true,cat:EVO[q.id].length>1?(q.br==='b'?'覚醒（Bルート）':'覚醒（Aルート）'):'覚醒',c:3,name:b.name,price:b.price,desc:()=>b.desc,quote:b.quote};};
 const gagCard=g=>Object.assign({gag:true,cat:'ありえない棚',c:4},g,{desc:()=>g.desc});
 let offer=[];
 function openShop(keep){
   if(!keep)G.pending--;const pool=upgradable();offer=[];
-  const sr=supReady(),er=evoReady();if(sr.length)offer.push(supCard(pick(sr)));else if(er.length)offer.push(evoCard(pick(er)));
-  while(offer.length<3&&pool.length){const it=pool.splice(Math.floor(R()*pool.length),1)[0];offer.push(R()<.1&&L(it.id)<=MAXLV-2?Object.assign({},it,{rare:true}):it);}
+  const sr=supReady(),er=evoReady();if(sr.length)offer.push(supCard(pick(sr)));else if(er.length){const q=pick(er);offer.push(evoCard(q));const alt=er.find(o=>o.id===q.id&&o.br!==q.br);if(alt)offer.push(evoCard(alt));}
+  /* always one driver card when possible, and gear you already own turns up more often, so builds deepen instead of thinning out */
+  const wt=i=>L(i.id)?2.4:1,takeW=arr=>{let t=0;for(const x of arr)t+=wt(x);let r=R()*t;for(let i=0;i<arr.length;i++){r-=wt(arr[i]);if(r<=0)return arr.splice(i,1)[0];}return arr.pop();},put=it=>offer.push(R()<.1&&L(it.id)<=MAXLV-2?Object.assign({},it,{rare:true}):it);
+  if(offer.length<3){const dr=pool.filter(i=>i.c===1);if(dr.length){const it=takeW(dr);pool.splice(pool.indexOf(it),1);put(it);}}
+  while(offer.length<3&&pool.length)put(takeW(pool));
   const gp=gagPool();if(gp.length&&(G.mod.gag||G.d>=80&&R()<.26)){const g=gagCard(pick(gp));if(offer.length<3)offer.push(g);else offer[2]=g;}
   if(!offer.length)offer=[{id:'save',cat:'理性',c:0,name:'今日は貯金する',price:0,desc:()=>'体力を 30 回復',quote:'買わないという選択肢も、ある。'}];
   const box=$('cards');box.textContent='';$('shopEyebrow').textContent=G.sale?'セール中！ぜんぶ半額':G.agari?'「これで上がり」…とは、ならなかった（Lv '+G.level+'）':'物欲が高まった（Lv '+G.level+'）';if(!keep)G.agari=false;
   offer.forEach((it,i)=>{
     const l=L(it.id),n=it.rare?2:1,full=it.sup||it.evo||it.gag?it.price:it.price*Math.pow(1.7,l)*(it.rare?2.6:1),price=Math.round((G.sale?full/2:full)/10)*10,b=document.createElement('button');b.type='button';b.className='card'+(it.sup?' sup':it.evo?' evo':it.gag?' gag':it.rare?' rare':'');
     const el=(c,t)=>{const d=document.createElement('div');d.className=c;d.textContent=t;b.appendChild(d);return d;};
-    const hd=document.createElement('div'),hw=document.createElement('div');hd.className='hd';hd.appendChild(iconImg(it.id,it.sup?2:it.evo?1:0));hd.appendChild(hw);b.appendChild(hd);
+    const hd=document.createElement('div'),hw=document.createElement('div');hd.className='hd';hd.appendChild(iconImg(it.id,it.sup?2:it.evo?(it.br==='b'?3:1):0));hd.appendChild(hw);b.appendChild(hd);
     for(const [c,t] of [['cat c'+it.c,it.rare?'限定セット':it.cat],['nm',it.name]]){const d=document.createElement('div');d.className=c;d.textContent=t;hw.appendChild(d);}
-    el('lv',it.sup?EVO[it.id].name+' が、一線を越える':it.evo?BY[it.id].name+' が進化する':it.gag?(it.again?'何度でも言える':'一点もの'):it.id==='save'?'':it.rare?'Lv '+l+' → '+(l+2)+'（2段階アップ）':l?'Lv '+l+' → '+(l+1):'新規導入');
+    el('lv',it.sup?EV(it.id).name+' が、一線を越える':it.evo?BY[it.id].name+' が進化する':it.gag?(it.again?'何度でも言える':'一点もの'):it.id==='save'?'':it.rare?'Lv '+l+' → '+(l+2)+'（2段階アップ）':l?'Lv '+l+' → '+(l+1):'新規導入');
     el('ds',it.desc(l+n));el('qt','「'+it.quote+'」');
     const pr=el('pr','');if(G.sale&&full>0){const s=document.createElement('s');s.textContent=yen(Math.round(full/10)*10);pr.appendChild(s);}pr.appendChild(document.createTextNode(yen(price)));
     el('key',String(i+1));b.addEventListener('click',()=>buy(it,price,n,b));box.appendChild(b);});
-  $('evoHint').textContent=DRIVERS.filter(d=>L(d)&&!sup[d]).map(d=>{const nd=EVO[d].need;return evo[d]?'超覚醒の条件：'+EVO[d].name+' ＋ '+BY[nd].s+' Lv5（いま '+L(nd)+'）':'覚醒の条件：'+BY[d].s+' Lv5（いま '+L(d)+'）＋ '+BY[nd].s+' Lv3（いま '+L(nd)+'）';}).join('　／　');
+  const hints=[];for(const d of DRIVERS){if(!L(d)||sup[d])continue;
+    if(evo[d]){if(SUP[d]&&evo[d]==='a'){const nd=EVO[d][0].need;hints.push('超覚醒：'+EV(d).name+' ＋ '+BY[nd].s+' Lv5（いま '+L(nd)+'）');}}
+    else hints.push('覚醒：'+BY[d].s+' Lv5（いま '+L(d)+'）＋ '+EVO[d].map(b=>BY[b.need].s+' Lv3（いま '+L(b.need)+'）→ '+b.name).join('　または　'));}
+  const setTxt=SETS.map(st=>{const have=st.of?st.of.filter(i=>L(i)).length:st.id==='multi'?drvN():0;return SET(st.id)?st.name+'（発動中）':st.of&&have?st.name+' '+have+'/'+st.n:st.id==='multi'&&have>=3?st.name+' '+have+'/4':'';}).filter(Boolean);
+  $('slotNote').textContent='ドライバー '+drvN()+' / '+SLOT_D+' 枠　　それ以外 '+othN()+' / '+SLOT_O+' 枠'+(drvN()>=SLOT_D||othN()>=SLOT_O?'（埋まった枠は、持っている機材の強化だけが並びます）':'');
+  $('evoHint').textContent=hints.join('　／　')+(setTxt.length?'　｜　セット効果：'+setTxt.join('、'):'');
   $('reroll').disabled=G.reroll<=0;$('rerollNote').textContent='あと '+G.reroll+' 回（ボスを倒すと増える）';
   if(!keep)sfx('lvl');setState('shop');
 }
@@ -745,10 +809,10 @@ function openChest(n){
   const r=R(),count=n||(r<.02+.012*U('luck')?5:r<.15+.08*U('luck')?3:1),haul=[];
   for(let i=0;i<count;i++){const sr=supReady(),er=evoReady(),gp=gagPool();let it;
     if(sr.length){const id=pick(sr);it={id,sup:true,name:SUP[id].name};}
-    else if(er.length){const id=pick(er);it={id,evo:true,name:EVO[id].name};}
+    else if(er.length){const q=pick(er);it=evoCard(q);}
     else if(gp.length&&R()<.14)it=gagCard(pick(gp));
     else{const pool=upgradable();if(!pool.length){it={id:'save',name:'耳休め（体力30回復）'};}else it=pick(pool);}
-    const before=L(it.id);apply(it,1);haul.push({id:it.id,name:it.name,evo:it.sup?2:it.evo?1:0,tag:it.sup?'超覚醒':it.gag?'ありえない':it.evo?'覚醒':it.id==='save'?'':before?'Lv '+before+' → '+(before+1):'新規導入'});}
+    const before=L(it.id);apply(it,1);haul.push({id:it.id,name:it.name,evo:it.sup?2:it.evo?(it.br==='b'?3:1):0,tag:it.sup?'超覚醒':it.gag?'ありえない':it.evo?'覚醒':it.id==='save'?'':before?'Lv '+before+' → '+(before+1):'新規導入'});}
   const jack=count>=5;if(jack)award('jackpot');
   $('chestEyebrow').textContent='福袋を手に入れた';$('chestTitle').textContent='中身は…';$('haul').textContent='';$('take').disabled=true;setState('chest');
   const names=ITEMS.map(i=>i.name),reel=$('reel');let k=0;
@@ -778,7 +842,7 @@ function randomEvent(){
 
 /* ---------- flow ---------- */
 function reset(){
-  lv={};evo={};sup={};gag={};trail=[];cd={ba:.3,dd:1,pl:.8,est:.6,anc:0};enemies=[];shots=[];ebul=[];gems=[];drops=[];parts=[];texts=[];rings=[];bolts=[];stars=[];laters=[];
+  lv={};evo={};sup={};gag={};trail=[];zones=[];beams=[];mines=[];G.sets={};cd={ba:.3,dd:1,pl:.8,est:.6,anc:0,pr:1,slam:0};enemies=[];shots=[];ebul=[];gems=[];drops=[];parts=[];texts=[];rings=[];bolts=[];stars=[];laters=[];
   Object.assign(G,{t:0,d:0,kills:0,spend:0,sale:false,level:1,xp:0,need:7,pending:0,spawnT:0,eliteT:35,eventT:28,bossI:0,loop:0,endless:false,shake:0,flash:0,freeze:0,combo:0,comboT:0,maxCombo:0,nextFever:50,fever:0,fevers:0,demo:0,reroll:2,tier:0,cleared:false,clearT:0,dmg:0,dps:0,dmgW:0,evoQ:[],evoFx:null,famI:0,fam:0,agari:false,mkN:0,mkT:.35,mkCd:0,thT:0,zoom:0,spShown:0,buying:false,acc:null,bossK:0,mission:null,bossHit:false});
   const s=META.starter;Object.assign(P,{x:0,y:0,hp:100,max:100,inv:0,fx:0,fy:1,walk:0,spd:1,taken:1,area:1,starter:s});
   G.mod={};if(G.daily)for(const m of dailyMods())G.mod[m[0]]=1;G.nl=G.daily?1:clamp(META.lv||1,1,META.maxLv);
@@ -844,8 +908,8 @@ function menu(tab){
     b.addEventListener('click',()=>{if(META.pts<cost||mx)return;META.pts-=cost;META.up[u.id]=l+1;save();sfx('buy');menu();});ups.appendChild(b);}
   $('upBadge').textContent=can||'';
   /* collection */
-  const ents=[...ITEMS.map(i=>({k:i.id,id:i.id,e:0,name:i.name,desc:i.desc(1),quote:i.quote,how:'買い物で手に入る'})),...DRIVERS.map(d=>({k:'E:'+d,id:d,e:1,name:EVO[d].name,desc:EVO[d].desc,quote:EVO[d].quote,how:'覚醒で手に入る'})),
-    ...DRIVERS.map(d=>({k:'S:'+d,id:d,e:2,name:SUP[d].name,desc:SUP[d].desc,quote:SUP[d].quote,how:'超覚醒で手に入る'})),...GAGS.map(g=>({k:g.id,id:g.id,e:0,name:g.name,desc:g.desc,quote:g.quote,how:'「ありえない棚」で見つかる'}))];
+  const ents=[...ITEMS.map(i=>({k:i.id,id:i.id,e:0,name:i.name,desc:i.desc(1),quote:i.quote,how:'買い物で手に入る'})),...DRIVERS.flatMap(d=>EVO[d].map((b,i)=>({k:'E:'+d+':'+(i?'b':'a'),id:d,e:i?3:1,name:b.name,desc:b.desc,quote:b.quote,how:BY[d].s+' と '+BY[b.need].s+' で覚醒する'}))),
+    ...DRIVERS.filter(d=>SUP[d]).map(d=>({k:'S:'+d,id:d,e:2,name:SUP[d].name,desc:SUP[d].desc,quote:SUP[d].quote,how:'超覚醒で手に入る'})),...GAGS.map(g=>({k:g.id,id:g.id,e:0,name:g.name,desc:g.desc,quote:g.quote,how:'「ありえない棚」で見つかる'}))];
   const zk=$('zk');zk.textContent='';let got=0;
   for(const en of ents){const seen=!!META.seen[en.k];if(seen)got++;const b=document.createElement('button');b.type='button';b.className='zc'+(seen?'':' no');b.setAttribute('aria-label',seen?en.name:'まだ見つけていない機材');
     if(seen)b.appendChild(iconImg(en.id,en.e));else b.textContent='？';
@@ -918,6 +982,7 @@ function ddWave(E,second,S){
   if(E)for(const g of gems)if(Math.hypot(g.x-P.x,g.y-P.y)<rad*1.3)g.pull=true;
   for(const e of enemies.slice()){const dx=e.x-P.x,dy=e.y-P.y,dd=Math.hypot(dx,dy)||1;if(dd<rad+e.r){if(!e.boss){e.kx+=dx/dd*(E?420:260);e.ky+=dy/dd*(E?420:260);}hit(e,d);}}
 }
+function boom(x,y,rad,d,E){rings.push({x,y,r:rad,t:.36,m:.36,c:E?K.pink:'#c5ced6',w:E?12:8,dd:1,E});sfx('dd');shake(E?.2:.08);for(const e of enemies.slice()){const dx=e.x-x,dy=e.y-y,q=Math.hypot(dx,dy)||1;if(q<rad+e.r){if(!e.boss){e.kx+=dx/q*300;e.ky+=dy/q*300;}hit(e,d);}}}
 function update(dt){
   G.t+=dt;const z=zoneI(),bossOn=bossAlive();G.dps+=(G.dmgW/dt-G.dps)*Math.min(1,dt/8);G.dmgW=0;
   if(G.cleared&&!G.endless){G.clearT-=dt;if(G.clearT<=0){gameOver();return;}}
@@ -931,13 +996,13 @@ function update(dt){
   let mx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),my=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
   if(stick.on){const dx=stick.x-stick.ox,dy=stick.y-stick.oy,d=Math.hypot(dx,dy);if(d>6){const k=Math.min(1,d/46)/d;mx=dx*k;my=dy*k;if(d>60){stick.ox=stick.x-dx/d*60;stick.oy=stick.y-dy/d*60;}}}
   const ml=Math.hypot(mx,my);if(ml>1){mx/=ml;my/=ml;}
-  const spd=178*P.spd*(G.fever>0?1.15:1)*(gag.g_gold?.92:1)*(gag.g_128?.94:1);
+  const spd=178*P.spd*(1+.04*L('sil'))*(1+.02*L('dongle'))*(G.fever>0?1.15:1)*(gag.g_gold?.92:1)*(gag.g_128?.94:1);
   if(ml>.05){P.x+=mx*spd*dt;P.y+=my*spd*dt;P.fx+=(mx/Math.max(ml,.01)-P.fx)*Math.min(1,dt*10);P.fy+=(my/Math.max(ml,.01)-P.fy)*Math.min(1,dt*10);P.walk+=dt*10;}
   trail.unshift(P.x,P.y);if(trail.length>100)trail.length=100;
   if(gag.g_tsumi)for(const k of [28,56,84]){const bx=trail[k],by=trail[k+1];if(bx===undefined)continue;for(const e of enemies){if(e.boss||e.bx>0)continue;const dx=e.x-bx,dy=e.y-by,d=Math.hypot(dx,dy)||1;if(d<e.r+16){e.bx=.35;e.kx+=dx/d*300;e.ky+=dy/d*300;hit(e,5+G.level,0,true);}}}
   if(gag.g_sc&&R()<.3)parts.push({x:P.x+(R()-.5)*34,y:P.y+8,vx:(R()-.5)*24,vy:26,t:.6,c:'#dff3ff',r:3});
-  G.mkT-=dt;G.mkCd-=dt;if(G.mkT<=0){if(G.mkN>=14&&G.mkCd<=0){call('まとめて消音 ×'+G.mkN,K.yellow);G.mkCd=3.5;G.zoom=.06;gainXp(G.mkN*.4);}G.mkN=0;G.mkT=.35;}if(G.zoom>0)G.zoom=Math.max(0,G.zoom-dt*.22);
-  if(P.inv>0)P.inv-=dt;if(L('aging')||gag.g_age)P.hp=Math.min(P.max,P.hp+(.5*L('aging')+(gag.g_age?3:0))*dt);
+  G.mkT-=dt;G.mkCd-=dt;if(G.mkT<=0){if(G.mkN>=18&&G.mkCd<=0){call('まとめて消音 ×'+G.mkN,K.yellow);G.mkCd=7;G.zoom=.06;gainXp(G.mkN*.4);}G.mkN=0;G.mkT=.35;}if(G.zoom>0)G.zoom=Math.max(0,G.zoom-dt*.22);
+  if(P.inv>0)P.inv-=dt;P.hp=Math.min(P.max,P.hp+(.5*L('aging')+.4*L('tube')+(SET('care')?1:0)+(gag.g_age?3:0))*dt);
   if(G.comboT>0){G.comboT-=dt;if(G.comboT<=0){G.combo=0;G.nextFever=50;}}
   if(G.fever>0){G.fever-=dt;if(R()<.5)parts.push({x:P.x+(R()-.5)*24,y:P.y+(R()-.5)*24,vx:0,vy:-30,t:.5,c:pick([K.pink,K.yellow,K.mint]),r:3});}
   if(G.demo>0){G.demo-=dt;if(G.demo<=0){toast('試聴おわり。…欲しくなった',1.8);buildBar();}}
@@ -949,21 +1014,35 @@ function update(dt){
   const m=G.mission;if(m){m.t-=dt;if(m.k==='nohit')m.p=m.goal-m.t;else if(m.k==='spot'&&Math.hypot(P.x-m.x,P.y-m.y)<95)m.p+=dt;if(m.p>=m.goal)endMission(true);else if(m.t<=0)endMission(m.k==='nohit');}
   /* weapons */
   const cm=mulCd(),ar=mulArea();for(const k in cd)cd[k]-=dt;
+  if(L('ba')&&cd.ba<=0&&evo.ba==='b'){const ts=nearest(30,640).sort((a,b)=>b.hp-a.hp).slice(0,3);
+    if(ts.length){cd.ba=.78*cm;for(const e of ts){const a=Math.atan2(e.y-P.y,e.x-P.x);shots.push({k:'sn',x:P.x,y:P.y,vx:Math.cos(a)*1100,vy:Math.sin(a)*1100,r:9,d:(9+3*L('ba'))*6.5,t:.65,a,seen:new Set()});}sfx('est',ts[0].x);stars.push({x:P.x+P.fx*14,y:P.y+P.fy*14,t:.16,m:.16,r:34,c:'#fff'});shake(.08);}else cd.ba=.15;}
   if(L('ba')&&cd.ba<=0){const E=isEvo('ba'),S=isSup('ba'),n=S?18:E?12:L('ba'),ts=nearest(S?24:n,S?640:E?520:430);
     if(ts.length&&shots.length<330){cd.ba=(S?.2:E?.42:.46)*cm;for(let i=0;i<n;i++){const e=S?pick(ts):ts[i%ts.length],a=Math.atan2(e.y-P.y,e.x-P.x)+(i>=ts.length||E?(R()-.5)*(S?2.4:E?1.4:.3):0),v=S?430:E?380:470;
       shots.push({k:'ba',x:P.x,y:P.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:S?4.5:E?6:5,d:(9+3*L('ba'))*(S?1.25:E?1.4:1),t:E?1.6:1.1,home:E?e:null,l:L('ba'),E,S,c:S?pick(['#fff',K.pink,K.yellow]):null,w:S?i*.009:E?i*.028:0,tr:S?null:[]});}
       sfx('ba',ts[0].x);stars.push({x:P.x+P.fx*14,y:P.y+P.fy*14,t:.12,m:.12,r:S?38:E?28:15+L('ba'),c:K.yellow});}else cd.ba=.15;}
+  if(L('dd')&&cd.dd<=0&&evo.dd==='b'){cd.dd=1.5*cm;if(zones.length>=5)zones.shift();zones.push({x:P.x,y:P.y,r:(72+16*L('dd'))*ar,t:4.5,m:4.5,k:0});ddWave(false);}
   if(L('dd')&&cd.dd<=0){const E=isEvo('dd'),S=isSup('dd');cd.dd=(S?1.8:E?2:2.5)*cm;ddWave(E,0,S);if(E)laters.push({t:.26,fn:()=>ddWave(true,1,S)});if(S)laters.push({t:.52,fn:()=>ddWave(true,2,S)});}
+  if(L('pl')&&cd.pl<=0&&evo.pl==='b'){const ts=nearest(1,580);if(ts.length){cd.pl=.24*cm;const a=Math.atan2(ts[0].y-P.y,ts[0].x-P.x)+(R()-.5)*.14;shots.push({k:'pl',x:P.x,y:P.y,vx:Math.cos(a)*600,vy:Math.sin(a)*600,r:12*ar,d:(9+5*L('pl'))*.8,t:.9,a,seen:new Set(),M:true});sfx('ba',ts[0].x);}else cd.pl=.15;}
   if(L('pl')&&cd.pl<=0){const E=isEvo('pl'),S=isSup('pl'),ts=nearest(1,520);if(ts.length){cd.pl=(S?1.3:E?1.5:1.9)*cm;const a0=Math.atan2(ts[0].y-P.y,ts[0].x-P.x),m=S?8:E?4:1;
       for(let i=0;i<m;i++){const a=a0+i*TAU/m;shots.push({k:'pl',x:P.x,y:P.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,r:(24+6*L('pl'))*ar*(S?1.9:E?1.35:1),d:(9+5*L('pl'))*(S?2.6:E?1.8:1),t:S?1.6:1.3,a,seen:new Set(),E,S});}sfx('pl');}else cd.pl=.2;}
+  if(L('est')&&cd.est<=0&&evo.est==='b'){const ts=nearest(1,560);if(ts.length){cd.est=1.45*cm;beams.push({a:Math.atan2(ts[0].y-P.y,ts[0].x-P.x),t:.65,m:.65,k:0});sfx('pl');sfx('est');shake(.15);}else cd.est=.2;}
   if(L('est')&&cd.est<=0){const E=isEvo('est'),S=isSup('est'),ts=nearest(S?4:E?2:1,300*ar*(S?1.5:1));if(ts.length){cd.est=(S?.9:E?1.1:1.5)*cm;const done=new Set(),d=(10+5*L('est'))*(S?2.4:E?1.7:1);sfx('est',ts[0].x);
       for(const st of ts){let cur=st,px=P.x,py=P.y;for(let j=0;j<(S?9:E?7:2+L('est'))&&cur;j++){done.add(cur);bolts.push({x0:px,y0:py,x1:cur.x,y1:cur.y,t:.18,E});stars.push({x:cur.x,y:cur.y,t:.2,m:.2,r:E?24:15,c:E?'#d9ccff':K.sky});px=cur.x;py=cur.y;hit(cur,d);
         let nx=null,nd=(E?210:150)*ar;for(const e of enemies){if(done.has(e)||e.hp<=0)continue;const q=Math.hypot(e.x-px,e.y-py);if(q<nd){nd=q;nx=e;}}cur=nx;}}}else cd.est=.2;}
   if(isSup('est')){G.thT-=dt;if(G.thT<=0){G.thT=.2;const c=[],vr=viewR()*.8;for(const e of enemies)if(e.hp>0&&Math.hypot(e.x-P.x,e.y-P.y)<vr)c.push(e);
       if(c.length){const e=pick(c);bolts.push({x0:e.x+(R()-.5)*120,y0:e.y-520,x1:e.x,y1:e.y,t:.2,E:true,T:true});stars.push({x:e.x,y:e.y,t:.25,m:.25,r:34,c:K.yellow});hit(e,(10+5*L('est'))*2);if(R()<.3)sfx('est',e.x);}}}
-  const AE=isEvo('anc'),AS=isSup('anc'),ancR=L('anc')?(60+11*L('anc'))*ar*(AS?2.7:AE?1.7:1):0;
+  const AE=isEvo('anc'),AS=isSup('anc'),AB=evo.anc==='b',ancR=L('anc')?(60+11*L('anc'))*ar*(AS?2.7:AB?1:AE?1.7:1):0;
   if(ancR){if(cd.anc<=0){cd.anc=.4;for(const e of enemies.slice())if(Math.hypot(e.x-P.x,e.y-P.y)<ancR+e.r){e.slow=AE?.8:.5;e.sf=AS?.22:AE?.3:.68;hit(e,(4+3*L('anc'))*(AS?3.2:AE?2:1),0,true);}}
     if(AE)for(let i=ebul.length-1;i>=0;i--)if(Math.hypot(ebul[i].x-P.x,ebul[i].y-P.y)<ancR){burst(ebul[i].x,ebul[i].y,K.mint,2,60);ebul.splice(i,1);}}
+  if(AB&&cd.slam<=0){cd.slam=.2;for(const e of enemies.slice()){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<44+e.r){if(!e.boss){e.kx+=dx/d*340;e.ky+=dy/d*340;}hit(e,26+9*L('anc'));stars.push({x:e.x,y:e.y,t:.14,m:.14,r:16,c:'#ffa24d'});}}}
+  for(let i=zones.length-1;i>=0;i--){const z=zones[i];z.t-=dt;z.k-=dt;if(z.t<=0){zones.splice(i,1);continue;}if(z.k<=0){z.k=.4;for(const e of enemies.slice())if(Math.hypot(e.x-z.x,e.y-z.y)<z.r+e.r){e.slow=.5;e.sf=.55;hit(e,(8+4*L('dd'))*1.5,0,true);}}}
+  for(let i=beams.length-1;i>=0;i--){const b=beams[i];b.t-=dt;b.k-=dt;if(b.t<=0){beams.splice(i,1);continue;}if(b.k<=0){b.k=.1;const c=Math.cos(b.a),sn=Math.sin(b.a),wd=18*ar;for(const e of enemies.slice()){const dx=e.x-P.x,dy=e.y-P.y,al=dx*c+dy*sn;if(al>0&&al<680&&Math.abs(dy*c-dx*sn)<wd+e.r)hit(e,(10+5*L('est'))*1.1);}}}
+  if(L('pz')){const E=isEvo('pz'),n=E?8:1+L('pz'),rad=(E?74+Math.sin(G.t*3)*36:64)*ar,d=(5+3*L('pz'))*(E?2:1);G.pzA=(G.pzA||0)+dt*(E?4.6:3);
+    for(let i=0;i<n;i++){const a=G.pzA+i/n*TAU,bx=P.x+Math.cos(a)*rad,by=P.y+Math.sin(a)*rad;for(const e of enemies){if(e.hp<=0||e.pzT>0)continue;if(Math.hypot(e.x-bx,e.y-by)<e.r+15){e.pzT=.3;hit(e,d);}}}}
+  if(L('pr')){if(cd.pr<=0){cd.pr=(2.6-.2*L('pr'))*cm;if(mines.length<8)mines.push({x:P.x,y:P.y,t:5,arm:.4});}
+    for(let i=mines.length-1;i>=0;i--){const m=mines[i];m.arm-=dt;m.t-=dt;let go=m.t<=0;if(!go&&m.arm<=0)for(const e of enemies)if(e.hp>0&&Math.hypot(e.x-m.x,e.y-m.y)<40+e.r){go=true;break;}
+      if(go){mines.splice(i,1);const E=isEvo('pr');boom(m.x,m.y,(64+11*L('pr'))*ar*(E?1.6:1),(14+8*L('pr'))*(E?2:1),E);
+        if(E)for(let k=0;k<3;k++){const a=k/3*TAU+R(),ox=m.x+Math.cos(a)*90,oy=m.y+Math.sin(a)*90;laters.push({t:.18+k*.07,fn:()=>boom(ox,oy,(64+11*L('pr'))*mulArea()*.8,(14+8*L('pr'))*.9,false)});}}}}
   /* shots */
   for(let i=shots.length-1;i>=0;i--){const s=shots[i];
     if(s.w>0){s.w-=dt;s.x=P.x;s.y=P.y;continue;}
@@ -982,12 +1061,12 @@ function update(dt){
       else if(e.type==='spike'){e.sh-=dt;if(d<240)sp=d<180?-sp:0;if(e.sh<=0&&d<420){e.sh=2.4;shootAt(e.x,e.y,Math.atan2(dy,dx),190);}}
       else if(e.type==='wow'){const w=Math.sin(e.ph*.7)*150;e.x+=-dy/d*w*dt;e.y+=dx/d*w*dt;}}
     if(e.slow>0){e.slow-=dt;sp*=e.sf||.68;}
-    e.x+=(dx/d*sp+e.kx)*dt;e.y+=(dy/d*sp+e.ky)*dt;e.kx*=Math.pow(.004,dt);e.ky*=Math.pow(.004,dt);e.ph+=dt*6;if(e.bx>0)e.bx-=dt;if(e.fl>0)e.fl-=dt;if(e.sq>0)e.sq-=dt;
+    e.x+=(dx/d*sp+e.kx)*dt;e.y+=(dy/d*sp+e.ky)*dt;e.kx*=Math.pow(.004,dt);e.ky*=Math.pow(.004,dt);e.ph+=dt*6;if(e.bx>0)e.bx-=dt;if(e.hk>0)e.hk-=dt;if(e.pzT>0)e.pzT-=dt;if(e.fl>0)e.fl-=dt;if(e.sq>0)e.sq-=dt;
     if(d>far&&!e.boss){const a=R()*TAU,r=viewR();e.x=P.x+Math.cos(a)*r;e.y=P.y+Math.sin(a)*r;}
-    if(d<e.r+12)hurt(dmg);if(G.state!=='play')return;}
+    if(d<e.r+12){if(L('hook')&&!(e.hk>0)&&!e.boss){e.hk=.4;e.kx-=dx/d*260;e.ky-=dy/d*260;hit(e,8*L('hook')+G.level*.5,0,true);}hurt(dmg);}if(G.state!=='play')return;}
   for(let i=ebul.length-1;i>=0;i--){const b=ebul[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.t-=dt;if(b.t<=0){ebul.splice(i,1);continue;}if(Math.hypot(b.x-P.x,b.y-P.y)<15){ebul.splice(i,1);hurt(12);if(G.state!=='play')return;}}
   /* pickups */
-  const reach=84*(1+.15*L('hires'))*(1+.1*U('reach')),fv=G.fever>0;
+  const reach=84*(1+.15*L('hires'))*(1+.12*L('cloth'))*(1+.1*U('reach')),fv=G.fever>0;
   for(let i=gems.length-1;i>=0;i--){const g=gems[i],dx=P.x-g.x,dy=P.y-g.y,d=Math.hypot(dx,dy)||1;g.ph+=dt*5;
     if(d<reach||g.pull||fv){g.pull=true;const v=Math.min(d,(300+(g.s=(g.s||0)+dt*900))*dt);g.x+=dx/d*v;g.y+=dy/d*v;}
     if(d<18){gems.splice(i,1);gainXp(g.v);sfx('gem');}}
@@ -1072,7 +1151,7 @@ function drawPlayer(){
   /* one orbiting unit per driver type, with a pip per level */
   const own=DRIVERS.filter(d=>L(d));own.forEach((id,i)=>{const a=G.t*1.6+i/own.length*TAU,E=isEvo(id),r2=(34+tier*3)*(E?1.5:1),ox=x+Math.cos(a)*r2,oy=y+Math.sin(a)*r2,s=(15+L(id)*2)*(E?1.3:1);
     if(E){ctx.strokeStyle=K.yellow;ctx.lineWidth=2;ctx.beginPath();ctx.arc(ox,oy,s*.6+Math.sin(G.t*6+i)*1.5,0,TAU);ctx.stroke();}
-    const k=sup[id]?1.3:1;ctx.drawImage(mkIcon(id,sup[id]?2:E),ox-s*k/2,oy-s*k/2,s*k,s*k);});
+    const k=sup[id]?1.3:1;ctx.drawImage(mkIcon(id,evoE(id)||(E?1:0)),ox-s*k/2,oy-s*k/2,s*k,s*k);});
 }
 function arrow(wx,wy,c,label){
   const {w,h,z}=view,sx=(wx-P.x)*z+w/2,sy=(wy-P.y)*z+h/2;if(sx>30&&sx<w-30&&sy>120&&sy<h-60)return;
@@ -1115,10 +1194,19 @@ function draw(){
     else if(o.k==='demo'){ctx.fillStyle=hue();ctx.beginPath();ctx.rect(o.x-16,y-12,32,24);ctx.fill();outline(3);ctx.fillStyle=K.ink;ctx.font='900 11px '+FONT;ctx.textAlign='center';ctx.fillText('試聴',o.x,y+4);}
     else if(o.k==='mag'){ctx.lineCap='butt';for(const [c,lw,e2] of [[K.ink,15,13],[K.red,8,6]]){ctx.strokeStyle=c;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(o.x-11,y+e2);ctx.lineTo(o.x-11,y);ctx.arc(o.x,y,11,Math.PI,0);ctx.lineTo(o.x+11,y+e2);ctx.stroke();}ctx.strokeStyle='#dfe6ea';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(o.x-11,y+6);ctx.lineTo(o.x-11,y+11);ctx.moveTo(o.x+11,y+6);ctx.lineTo(o.x+11,y+11);ctx.stroke();ctx.lineCap='round';}
     else{ctx.fillStyle=K.paper;ctx.beginPath();ctx.rect(o.x-9,y-8,18,17);ctx.fill();outline(3);ctx.beginPath();ctx.arc(o.x+11,y,5,-1.2,1.2);outline(3);ctx.fillStyle='#8a5a3c';ctx.fillRect(o.x-6,y-5,12,4);}}
+  for(const z of zones){const a=Math.min(1,z.t/.6),pu=1+Math.sin(G.t*9)*.04;ctx.globalAlpha=a*.34;ctx.fillStyle='#b0306a';ctx.beginPath();ctx.arc(z.x,z.y,z.r*pu,0,TAU);ctx.fill();ctx.globalAlpha=a*.8;ctx.strokeStyle=K.pink;ctx.lineWidth=3;for(let j=0;j<3;j++){const u=(G.t*.9+j/3)%1;ctx.beginPath();ctx.arc(z.x,z.y,z.r*u,0,TAU);ctx.stroke();}ctx.globalAlpha=1;}
+  for(const m of mines){const pu=m.arm>0?.6:1+Math.sin(G.t*12)*.08;ctx.fillStyle='#8b96a3';ctx.beginPath();ctx.ellipse(m.x,m.y,17*pu,13*pu,0,0,TAU);ctx.fill();outline(3);ctx.fillStyle=m.arm>0?'#c5ced6':K.pink;ctx.beginPath();ctx.ellipse(m.x,m.y,8*pu,6*pu,0,0,TAU);ctx.fill();outline(2);}
   for(const e of enemies)drawEnemy(e);
+  for(const b of beams){const al=Math.min(1,b.t*5),wd=18*mulArea()*(.7+.3*Math.sin(G.t*40));ctx.save();ctx.translate(P.x,P.y);ctx.rotate(b.a);ctx.globalAlpha=al*.35;ctx.fillStyle=K.sky;ctx.fillRect(10,-wd*1.7,680,wd*3.4);ctx.globalAlpha=al;ctx.fillStyle='#e9e0ff';ctx.fillRect(10,-wd,680,wd*2);ctx.fillStyle='#fff';ctx.fillRect(10,-wd*.45,680,wd*.9);
+    ctx.strokeStyle=K.sky;ctx.lineWidth=3;ctx.beginPath();for(let x=10;x<690;x+=14)ctx.lineTo(x,Math.sin(x*.09-G.t*40)*wd*1.3);ctx.stroke();ctx.restore();ctx.globalAlpha=1;}
+  if(L('pz')){const E=isEvo('pz'),n=E?8:1+L('pz'),rad=(E?74+Math.sin(G.t*3)*36:64)*mulArea();ctx.strokeStyle='rgba(122,168,255,.3)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(P.x,P.y,rad,0,TAU);ctx.stroke();
+    for(let i=0;i<n;i++){const a=(G.pzA||0)+i/n*TAU,bx=P.x+Math.cos(a)*rad,by=P.y+Math.sin(a)*rad,q=E?15:12;ctx.save();ctx.translate(bx,by);ctx.rotate(a+Math.PI/2);ctx.globalAlpha=.35;ctx.fillStyle=K.sky;ctx.beginPath();ctx.arc(0,rad,rad,-Math.PI/2-.35,-Math.PI/2);ctx.arc(0,rad,rad-6,-Math.PI/2,-Math.PI/2-.35,true);ctx.fill();ctx.globalAlpha=1;
+      ctx.fillStyle=E?'#fff':'#e6f0ff';ctx.beginPath();ctx.moveTo(q*1.3,0);ctx.lineTo(0,-q*.55);ctx.lineTo(-q,0);ctx.lineTo(0,q*.55);ctx.closePath();ctx.fill();outline(2.5,E?K.sky:K.ink);ctx.restore();}}
+  if(evo.anc==='b'){ctx.strokeStyle='#ffa24d';ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<=28;i++){const a=i/28*TAU,q=38+(i%2?7:0)+Math.sin(G.t*30+i)*2;ctx.lineTo(P.x+Math.cos(a)*q,P.y+Math.sin(a)*q);}ctx.closePath();ctx.stroke();}
   for(const b of ebul){ctx.fillStyle=K.red;ctx.beginPath();ctx.arc(b.x,b.y,6,0,TAU);ctx.fill();outline(2.5,K.paper);}
   ctx.lineCap='round';ctx.lineJoin='round';
   for(const s of shots){if(s.w>0)continue;
+    if(s.k==='sn'){const c=Math.cos(s.a),sn=Math.sin(s.a);for(const [lw,col,len] of [[14,K.ink,150],[9,K.yellow,150],[4,'#fff',170]]){ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(s.x-c*len,s.y-sn*len);ctx.lineTo(s.x,s.y);ctx.stroke();}continue;}
     if(s.k==='ba'){const tr=s.tr||[],n=tr.length/2;
       for(let i=1;i<n;i++){const u=i/n;ctx.strokeStyle=s.E?(u>.6?'#fff3c4':'#ff9d3c'):'#fff3c4';ctx.globalAlpha=u*(s.E?.9:.6);ctx.lineWidth=s.r*(s.E?1.7:1.2)*u;ctx.beginPath();ctx.moveTo(tr[i*2-2],tr[i*2-1]);ctx.lineTo(tr[i*2],tr[i*2+1]);ctx.stroke();}ctx.globalAlpha=1;
       ctx.save();ctx.translate(s.x,s.y);ctx.rotate(Math.atan2(s.vy,s.vx));ctx.fillStyle=s.c||(s.E?'#fff':s.l>=4?'#fff3c4':K.yellow);ctx.beginPath();ctx.ellipse(0,0,s.r*1.7,s.r*.85,0,0,TAU);ctx.fill();outline(2.5);if(s.E){ctx.fillStyle='#b8c4cc';ctx.fillRect(-s.r*1.3,-s.r*.42,s.r*.9,s.r*.84);}ctx.restore();}
@@ -1157,7 +1245,7 @@ function label(s,x,y,size,c,disp,maxW){ctx.font=(disp?'400 ':'900 ')+size+'px '+
 function spark(x,y,r){ctx.fillStyle='#fff';ctx.beginPath();for(let i=0;i<8;i++){const a=i/8*TAU,q=i%2?r*.28:r;ctx.lineTo(x+Math.cos(a)*q,y+Math.sin(a)*q);}ctx.closePath();ctx.fill();outline(2);}
 /* evolution cut-in: streaks converge on the old driver, then a sunburst, shockwaves and confetti reveal the new one */
 function drawEvo(w,h){
-  const f=G.evoFx,S=f.sup,D=S?SUP[f.id]:EVO[f.id],from=S?EVO[f.id].name:BY[f.id].name+' Lv5',t=f.t,cx=w/2,cy=h*.44,q=Math.min(1,w/430),M=Math.hypot(w,h);
+  const f=G.evoFx,S=f.sup,D=S?SUP[f.id]:EV(f.id),from=S?EVO[f.id][0].name:BY[f.id].name+' Lv5',t=f.t,cx=w/2,cy=h*.44,q=Math.min(1,w/430),M=Math.hypot(w,h);
   ctx.fillStyle='rgba(15,34,51,'+Math.min(.84,t*3)+')';ctx.fillRect(0,0,w,h);
   if(t<1.15){const k=t/1.15;ctx.lineCap='round';
     for(let i=0;i<36;i++){const a=i*2.4,u=1-((k*2.2+i*.37)%1),r0=40+u*M*.6;ctx.strokeStyle=i%2?K.yellow:S?'#fff':K.pink;ctx.globalAlpha=.25+.6*(1-u);ctx.lineWidth=3+4*(1-u);ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r0,cy+Math.sin(a)*r0);ctx.lineTo(cx+Math.cos(a)*(r0+60*u+14),cy+Math.sin(a)*(r0+60*u+14));ctx.stroke();}
@@ -1170,7 +1258,7 @@ function drawEvo(w,h){
     ctx.restore();
     const g=ctx.createRadialGradient(cx,cy,10,cx,cy,M*.5);g.addColorStop(0,'rgba(255,255,255,.95)');g.addColorStop(.3,S?'rgba(255,210,63,.35)':'rgba(255,255,255,.3)');g.addColorStop(1,'rgba(15,34,51,.6)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
     for(let i=0;i<(S?5:3);i++){const r0=u*540-i*150;if(r0>0){ctx.globalAlpha=Math.max(0,1-r0/M);ctx.strokeStyle=S&&i%2?K.yellow:K.paper;ctx.lineWidth=10;ctx.beginPath();ctx.arc(cx,cy,r0,0,TAU);ctx.stroke();}}ctx.globalAlpha=1;
-    const s=(S?236:200)*q*e;ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.sin(u*5)*.06);ctx.drawImage(mkIcon(f.id,S?2:1),-s/2,-s/2,s,s);ctx.restore();
+    const s=(S?236:200)*q*e;ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.sin(u*5)*.06);ctx.drawImage(mkIcon(f.id,S?2:evoE(f.id)),-s/2,-s/2,s,s);ctx.restore();
     for(let i=0;i<(S?16:10);i++){const a=i*.63+u*.4,r0=(132+(i%3)*34)*q,tw=.5+.5*Math.sin(u*9+i*2);spark(cx+Math.cos(a)*r0,cy+Math.sin(a)*r0,(6+tw*9)*q);}
     for(const c of f.conf){ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.a);ctx.fillStyle=c.c;ctx.fillRect(-c.s/2,-c.s/4,c.s,c.s/2);ctx.restore();}
     const z=1+Math.max(0,1-u/.22)*2.2;label(S?'超 覚 醒':'覚　醒',cx,cy-158*q,(S?70:66)*q*z,S?K.yellow:K.red,true);
@@ -1195,7 +1283,7 @@ function frame(now){
 reset();for(const [t,x,y] of [['white',-150,-90],['white',-190,-40],['pop',170,-110],['hum',210,80],['clip',-120,150],['white',120,170]])spawn(t,x,y);
 for(let i=0;i<9;i++)gems.push({x:(R()-.5)*420,y:(R()-.5)*420,v:i%4?1:4,ph:R()*6});
 menu();
-window.__numa={BOSSES,G,P,META,GAGS,sup:()=>sup,gag:()=>gag,lv:()=>lv,evo:()=>evo,enemies:()=>enemies,gems:()=>gems,ebul:()=>ebul,drops:()=>drops,keys,tone:toneName,build:buildName,power,apply,BY};
+window.__numa={BOSSES,G,P,META,GAGS,EVO,SETS,ITEMS,sup:()=>sup,gag:()=>gag,lv:()=>lv,evo:()=>evo,enemies:()=>enemies,gems:()=>gems,ebul:()=>ebul,drops:()=>drops,keys,tone:toneName,build:buildName,power,apply,BY};
 requestAnimationFrame(frame);
 })();
 </script>
