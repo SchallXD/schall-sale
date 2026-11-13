@@ -293,7 +293,7 @@ summary{cursor:pointer;font-weight:900}
               <li><b>枠</b></li><li>ドライバーは4種、それ以外は7種まで。何を選ぶかで構成が変わる</li>
               <li><b>セット</b></li><li>ケーブル3種、イヤーピース3種などをそろえると効果が付く</li>
               <li><b>超覚醒</b></li><li>覚醒したドライバーの相方を Lv5 にすると、現実にはありえない姿へ</li>
-              <li><b>福袋</b></li><li>金ぶちの高級ノイズやボス、ミッション達成で手に入る</li>
+              <li><b>福袋</b></li><li>高級ノイズやボス、ミッション達成で手に入る。中身は手持ちの機材の強化だけ</li>
             </ul>
           </details>
         </div>
@@ -713,7 +713,7 @@ function hit(e,d,x,noCrit){
   if(e.hp<=0)kill(e);
 }
 function kill(e){
-  const T=e.boss||TYPES[e.type];G.kills++;G.mkN++;if(rings.length<26)rings.push({x:e.x,y:e.y,r:e.r*2.4,t:.2,m:.2,c:T.c,w:3});
+  const T=e.boss||TYPES[e.type];G.kills++;if(G.mission&&G.mission.k==='kill'&&e.type!=='ghost')G.mission.p++;G.mkN++;if(rings.length<26)rings.push({x:e.x,y:e.y,r:e.r*2.4,t:.2,m:.2,c:T.c,w:3});
   if(e.type!=='ghost'&&e.type!=='mini'){G.combo++;G.comboT=Math.max(.7,2-G.combo/160)*(1+.1*L('cloth'));if(G.combo>G.maxCombo)G.maxCombo=G.combo;const c=$('combo');c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');
     if(G.combo>=100)award('combo100');if(CALLS[G.combo])call(CALLS[G.combo]);if(G.combo>=G.nextFever){G.nextFever=G.nextFever*2+50;fever();}}
   sfx('kill',e.x);burst(e.x,e.y,T.c,e.boss?70:e.elite?26:7,e.boss?320:e.elite?220:120);
@@ -815,15 +815,16 @@ $('reroll').addEventListener('click',()=>{if(G.state!=='shop'||G.reroll<=0||G.bu
 let chestTimers=[];
 function openChest(n){
   const r=R(),count=n||(r<.02+.012*U('luck')?5:r<.15+.08*U('luck')?3:1),haul=[];
-  for(let i=0;i<count;i++){const sr=supReady(),er=evoReady(),gp=gagPool();let it;
+  /* a lucky bag only ever grows what you already carry: it never adds a new item, and never picks an awakening route for you */
+  for(let i=0;i<count;i++){const sr=supReady(),er=evoReady().filter(q=>EVO[q.id].every((b,k)=>(k?'b':'a')===q.br||!L(b.need))),own=ITEMS.filter(o=>L(o.id)&&L(o.id)<MAXLV);let it;
     if(sr.length){const id=pick(sr);it={id,sup:true,name:SUP[id].name};}
-    else if(er.length){const q=pick(er);it=evoCard(q);}
-    else if(gp.length&&R()<.14)it=gagCard(pick(gp));
-    else{const pool=upgradable();if(!pool.length){it={id:'save',name:'耳休め（体力30回復）'};}else it=pick(pool);}
+    else if(er.length)it=evoCard(pick(er));
+    else if(own.length)it=pick(own);
+    else it={id:'save',name:'耳休め（体力30回復）'};
     const before=L(it.id);apply(it,1);haul.push({id:it.id,name:it.name,evo:it.sup?2:it.evo?(it.br==='b'?3:1):0,tag:it.sup?'超覚醒':it.gag?'ありえない':it.evo?'覚醒':it.id==='save'?'':before?'Lv '+before+' → '+(before+1):'新規導入'});}
   const jack=count>=5;if(jack)award('jackpot');
-  $('chestEyebrow').textContent='福袋を手に入れた';$('chestTitle').textContent='中身は…';$('haul').textContent='';$('take').disabled=true;setState('chest');
-  const names=ITEMS.map(i=>i.name),reel=$('reel');let k=0;
+  $('chestEyebrow').textContent='福袋を手に入れた（手持ちの機材が育つ）';$('chestTitle').textContent='中身は…';$('haul').textContent='';$('take').disabled=true;setState('chest');
+  const names=ITEMS.filter(o=>L(o.id)).map(o=>o.name),reel=$('reel');let k=0;
   const spin=setInterval(()=>{reel.textContent=names[k++%names.length];sfx('tick');},70);chestTimers=[spin];
   chestTimers.push(setTimeout(()=>{clearInterval(spin);reel.textContent=jack?'大当たり！ '+count+'点入り':count+'点入り';$('chestTitle').textContent=jack?'大当たり！！':count>=3?'当たり！':'福袋の中身';if(jack)sfx('jack');
     haul.forEach((h,i)=>chestTimers.push(setTimeout(()=>{const li=document.createElement('li');if(h.evo)li.className='e';li.appendChild(iconImg(h.id,h.evo));li.appendChild(document.createTextNode(h.name));const s=document.createElement('span');s.textContent=h.tag;li.appendChild(s);$('haul').appendChild(li);sfx('ding',660*Math.pow(1.122,i*2));if(i===haul.length-1)$('take').disabled=false;},250+i*320)));
