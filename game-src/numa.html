@@ -186,6 +186,28 @@ summary{cursor:pointer;font-weight:900}
 .call.show{animation:callpop 1s both}
 @keyframes callpop{0%{transform:scale(2.4) rotate(-6deg);opacity:0}14%{transform:scale(1) rotate(-3deg);opacity:1}72%{transform:scale(1) rotate(-3deg);opacity:1}100%{transform:translateY(-34px) rotate(-3deg);opacity:0}}
 @media (prefers-reduced-motion:reduce){.card.evo::before,.card.sup::before{animation:none}.call.show{animation:none;opacity:0}}
+.tabs{display:flex;gap:6px;border-bottom:3px solid var(--ink)}
+.tab{flex:1;border:3px solid var(--ink);border-bottom:0;border-radius:10px 10px 0 0;background:var(--paper);padding:7px 2px;font-size:13px;font-weight:900;min-width:0}
+.tab[aria-selected="true"]{background:var(--yellow)}
+.tab span{display:inline-block;margin-left:4px;background:var(--red);color:var(--paper);border-radius:10px;font-size:10px;padding:0 6px}
+.tab span:empty{display:none}
+.tp{display:flex;flex-direction:column;gap:10px}
+.lvrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sub.sm{padding:1px 13px;font-size:17px;border-radius:10px}
+#lvNum{font-family:var(--display);font-weight:400;font-size:22px;min-width:1.3em;text-align:center}
+.ptrow{font-size:14px}.ptrow b{font-family:var(--display);font-weight:400;font-size:28px;color:var(--red);font-variant-numeric:tabular-nums}.ptrow .note{display:block}
+.ups{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.up{text-align:left;border:3px solid var(--ink);border-radius:12px;background:#fff;padding:7px 10px;display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:12px;font-weight:500;min-width:0}
+.up b{font-size:13px;font-weight:900}
+.up .c{grid-row:1/3;grid-column:2;align-self:center;background:var(--red);color:var(--paper);font-family:var(--display);padding:2px 9px;border-radius:8px;font-size:13px;white-space:nowrap}
+.up:disabled{opacity:.55}.up.max{background:var(--paper)}.up.max .c{background:var(--ink)}
+.up:not(:disabled):active{transform:translate(2px,2px)}
+.zk{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
+.zc{aspect-ratio:1;border:2px solid var(--ink);border-radius:10px;background:#fff;display:grid;place-items:center;padding:3px;font-family:var(--display);font-size:18px;color:var(--dim);min-width:0}
+.zc .ic{width:100%;height:100%}
+.zc.no{background:#ebe2cd;border-style:dashed}
+.zkinfo{border:2px dashed var(--ink);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.6;font-weight:500;min-height:3.6em}
+.stat.pt{background:#ffe9e4}.stat.pt .v{color:var(--red)}.stat.pt #rNext{margin-top:3px;font-size:12px;color:var(--ink)}
 #frBig{width:100%;height:auto;display:block;border-radius:12px}
 #share{width:100%;border:2px dashed var(--ink);border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-weight:500;font-size:13px;line-height:1.6;padding:8px 10px;resize:none;-webkit-user-select:text;user-select:text}
 </style>
@@ -230,20 +252,39 @@ summary{cursor:pointer;font-weight:900}
       <div class="under"><span class="rib">指1本で遊べる有線イヤホン沼サバイバル</span></div>
       <div class="dstrip" aria-hidden="true"><span>0m</span><div class="dl"><b style="left:20%"></b><b style="left:40%"></b><b style="left:60%"></b><b style="left:80%"></b><b class="last" style="left:100%"></b></div><span>沼の底 1000m</span></div>
       <div class="sheet">
-        <p>めざすは<b>沼の底、深さ1000m</b>。200mごとのボスを倒し、底にひそむ「プラシーボ」を消し去ろう。攻撃は自動。あなたは、なぞって動くだけ。</p>
-        <div class="lbl">出発するイヤホン</div>
-        <div class="starters" id="starters"></div>
-        <div class="btns"><button class="go" id="start" type="button">沼に入る</button><span class="note" id="bestNote"></span></div>
-        <details><summary>遊び方</summary>
-          <ul class="how">
-            <li><b>動かす</b></li><li>画面をなぞる（PCは WASD か矢印キー）</li>
-            <li><b>コンボ</b></li><li>ノイズを続けて消すと経験値アップ。伸ばすとフィーバー</li>
-            <li><b>覚醒</b></li><li>ドライバーを Lv5、相性のいい機材を Lv3 にすると進化</li>
-            <li><b>超覚醒</b></li><li>覚醒したドライバーの相方を Lv5 にすると、現実にはありえない姿へ</li>
-            <li><b>福袋</b></li><li>金ぶちの高級ノイズやボス、ミッション達成で手に入る</li>
-          </ul>
-        </details>
-        <details><summary id="achSum">実績</summary><ul class="ach" id="achList"></ul></details>
+        <div class="tabs" role="tablist"><button class="tab" type="button" role="tab" data-t="dive">もぐる</button><button class="tab" type="button" role="tab" data-t="up">強化<span id="upBadge"></span></button><button class="tab" type="button" role="tab" data-t="zukan">図鑑</button><button class="tab" type="button" role="tab" data-t="rec">記録</button></div>
+        <div class="tp" id="t-dive">
+          <p>めざすは<b>沼の底、深さ1000m</b>。200mごとのボスを倒し、底にひそむ「プラシーボ」を消し去ろう。攻撃は自動。あなたは、なぞって動くだけ。</p>
+          <div class="lvrow"><span class="lbl">沼レベル</span><button class="sub sm" id="lvDown" type="button" aria-label="沼レベルを下げる">−</button><b id="lvNum">1</b><button class="sub sm" id="lvUp" type="button" aria-label="沼レベルを上げる">＋</button><span class="note" id="lvNote"></span></div>
+          <div class="lbl">出発するイヤホン</div>
+          <div class="starters" id="starters"></div>
+          <div class="btns"><button class="go" id="start" type="button">沼に入る</button><button class="sub" id="dailyBtn" type="button">本日の沼に挑む</button></div>
+          <div class="note" id="dailyNote"></div>
+          <div class="note" id="bestNote"></div>
+        </div>
+        <div class="tp" id="t-up" hidden>
+          <div class="ptrow">還元ポイント <b id="pts">0</b> P<span class="note">もぐるたびに、深さと散財に応じて戻ってきます。強化は次のダイブからずっと効きます。</span></div>
+          <div class="ups" id="ups"></div>
+        </div>
+        <div class="tp" id="t-zukan" hidden>
+          <div class="lbl" id="zkSum"></div>
+          <div class="zk" id="zk"></div>
+          <div class="zkinfo" id="zkInfo">アイコンを押すと説明が出ます。</div>
+        </div>
+        <div class="tp" id="t-rec" hidden>
+          <div class="stats" id="recStats"></div>
+          <div class="lbl" id="achSum">実績</div>
+          <ul class="ach" id="achList"></ul>
+          <details><summary>遊び方</summary>
+            <ul class="how">
+              <li><b>動かす</b></li><li>画面をなぞる（PCは WASD か矢印キー）</li>
+              <li><b>コンボ</b></li><li>ノイズを続けて消すと経験値アップ。伸ばすとフィーバー</li>
+              <li><b>覚醒</b></li><li>ドライバーを Lv5、相性のいい機材を Lv3 にすると進化</li>
+              <li><b>超覚醒</b></li><li>覚醒したドライバーの相方を Lv5 にすると、現実にはありえない姿へ</li>
+              <li><b>福袋</b></li><li>金ぶちの高級ノイズやボス、ミッション達成で手に入る</li>
+            </ul>
+          </details>
+        </div>
       </div>
     </div>
   </div>
@@ -290,10 +331,11 @@ summary{cursor:pointer;font-weight:900}
         <div class="stat full"><div class="l">構成</div><div class="v" id="rBuild">1BA</div></div>
         <div class="stat full"><div class="l">散財の換算</div><div class="v" id="rConv">-</div></div>
         <div class="stat full"><div class="l">ひと言レビュー</div><div class="v" id="rRev">-</div></div>
+        <div class="stat full pt"><div class="l">ポイント還元</div><div class="v" id="rPts">+0 P</div><div class="l" id="rNext"></div></div>
       </div>
       <canvas id="frBig" width="1000" height="320"></canvas>
       <textarea id="share" rows="4" readonly aria-label="結果のテキスト"></textarea>
-      <div class="btns"><button class="go" id="retry" type="button">もう一度もぐる</button><button class="sub" id="endless" type="button" hidden>底なしモードで続ける</button><button class="sub" id="toMenu" type="button">イヤホンを選びなおす</button><button class="sub" id="copy" type="button">結果をコピー</button></div>
+      <div class="btns"><button class="go" id="retry" type="button">もう一度もぐる</button><button class="sub" id="endless" type="button" hidden>底なしモードで続ける</button><button class="sub" id="toUp" type="button">ポイントで強化する</button><button class="sub" id="toMenu" type="button">イヤホンを選びなおす</button><button class="sub" id="copy" type="button">結果をコピー</button></div>
     </div>
   </div>
 </div>
@@ -362,7 +404,22 @@ const STARTERS=[
  {id:'tws',name:'耳掛けステージモニター',desc:'骨伝導搭載／足が速い',ok:m=>m.best>=600,cond:'600m 到達で解放'},
  {id:'open',name:'開放型イヤホン',desc:'平面磁界／範囲+25%／被ダメ+25%（音漏れ）',ok:m=>m.clears>=1,cond:'沼の底の制覇で解放'}
 ];
-const ACH=[['d200','200m に到達'],['d600','600m に到達'],['clear','沼の底を制覇'],['combo100','100 コンボ'],['fever3','1回のダイブでフィーバー3回'],['evo1','はじめての覚醒'],['evoAll','5種すべてを覚醒（通算）'],['spend1m','1回で100万円を散財'],['jackpot','福袋で大当たり'],['tribrid','ドライバーを3種以上積む'],['nohit','ボスを無傷で撃破'],['donshari','ドンシャリで400m 到達'],['sup1','はじめての超覚醒'],['gag5','ありえない機材を1回で5つ'],['spend100m','1回で1億円を散財']];
+const ACH=[['d200','200m に到達'],['d600','600m に到達'],['clear','沼の底を制覇'],['combo100','100 コンボ'],['fever3','1回のダイブでフィーバー3回'],['evo1','はじめての覚醒'],['evoAll','5種すべてを覚醒（通算）'],['spend1m','1回で100万円を散財'],['jackpot','福袋で大当たり'],['tribrid','ドライバーを3種以上積む'],['nohit','ボスを無傷で撃破'],['donshari','ドンシャリで400m 到達'],['sup1','はじめての超覚醒'],['gag5','ありえない機材を1回で5つ'],['spend100m','1回で1億円を散財'],['runs10','10回もぐる'],['rich','生涯の散財が10億円'],['zukan','図鑑を25種うめる'],['daily3','本日の沼に3日連続で挑む'],['lv3','沼レベル3を制覇'],['lv5','沼レベル5を制覇']];
+/* things that carry over between dives */
+const UPG=[
+ {id:'hp',name:'耳のスタミナ',desc:l=>'最大体力 +'+10*l,max:5,cost:[40,90,160,260,400]},
+ {id:'dmg',name:'聴く力',desc:l=>'与えるダメージ +'+6*l+'%',max:5,cost:[60,120,200,320,480]},
+ {id:'xp',name:'物欲センサー',desc:l=>'経験値 +'+6*l+'%',max:5,cost:[50,110,190,300,450]},
+ {id:'spd',name:'フットワーク',desc:l=>'足の速さ +'+3*l+'%',max:5,cost:[40,90,160,260,400]},
+ {id:'reach',name:'耳ざとさ',desc:l=>'音符を拾える距離 +'+10*l+'%',max:5,cost:[30,70,130,210,320]},
+ {id:'reroll',name:'はしご癖',desc:l=>'「別の店を見る」 +'+l+' 回',max:3,cost:[80,200,400]},
+ {id:'luck',name:'福袋運',desc:l=>'福袋が当たりになりやすい（'+l+' 段階）',max:3,cost:[100,240,450]},
+ {id:'start',name:'下取りに出す',desc:l=>'出発してすぐ、機材を '+l+' つ選べる',max:2,cost:[250,600]},
+ {id:'revive',name:'予備のイヤホン',desc:()=>'力尽きても、1回だけ復活する',max:1,cost:[700]}
+];
+const MODS=[['fast','ノイズの足が20%速い'],['tank','ノイズの体力が1.5倍'],['sale','全品ずっと半額'],['gag','ありえない棚が毎回並ぶ'],['glass','体力は半分、ダメージは1.5倍'],['rich','経験値が1.5倍'],['elite','高級ノイズが3倍出る']];
+const dayKey=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),today=()=>dayKey(new Date());
+function dailyMods(){let h=7;for(const c of today())h=(h*31+c.charCodeAt(0))>>>0;const a=h%MODS.length,b=(a+1+(h>>>5)%(MODS.length-1))%MODS.length;return [MODS[a],MODS[b]];}
 const ZONES=['入門の浅瀬','イヤピの湿地','リケーブルの森','ハイエンドの深み','沼の底'];
 const BOSSES=[
  {at:200,id:'jitter',name:'ジッター',sub:'クロックのゆらぎ',hp:900,secs:22,r:40,c:'#3fd0c9'},
@@ -413,8 +470,10 @@ function mkIcon(id,E){
 function iconImg(id,E){E=E===2?2:E?1:0;const key=id+E;if(!IU[key])IU[key]=mkIcon(id,E).toDataURL();const im=document.createElement('img');im.src=IU[key];im.alt='';im.className='ic';return im;}
 
 /* ---------- saved progress ---------- */
-let META={best:0,clears:0,ach:{},evo:{},sup:{},starter:'std'};
+let META={best:0,clears:0,ach:{},evo:{},sup:{},starter:'std',pts:0,up:{},lv:1,maxLv:1,seen:{},streak:0,lastDay:''};
 try{const m=JSON.parse(localStorage.getItem('numa-meta')||'null');if(m)Object.assign(META,m);const o=+(localStorage.getItem('numa-best')||0);if(o>META.best)META.best=o;}catch(e){}
+META.st=Object.assign({runs:0,kills:0,spend:0,combo:0,fast:0,by:{},boss:{}},META.st||{});META.daily=Object.assign({date:'',best:0,played:false},META.daily||{});
+const U=id=>META.up[id]||0;
 function save(){try{localStorage.setItem('numa-meta',JSON.stringify(META));}catch(e){}}
 
 /* ---------- state ---------- */
@@ -426,7 +485,7 @@ const L=id=>lv[id]||0,isEvo=id=>!!evo[id]||(G.demo>0&&L(id)>0),isSup=id=>!!sup[i
 const depth=()=>Math.floor(G.d),zoneI=()=>Math.min(4,Math.floor(G.d/200)%5+(G.d>=1000&&!G.endless?4:0));
 const total=()=>ITEMS.reduce((s,i)=>s+L(i.id),0)+3*Object.keys(evo).length+6*Object.keys(sup).length+2*Object.keys(gag).length;
 const power=()=>Math.round(72+total()*1.5);
-const mulDmg=()=>(1+.12*L('copper'))*(gag.g_sc?1.35:1),mulCd=()=>Math.pow(.92,L('silver'))*(G.fever>0?.7:1)*(G.demo>0?.75:1)*(gag.g_128?.8:1),mulArea=()=>(1+.1*L('bal'))*P.area*(gag.g_44?1.3:1);
+const mulDmg=()=>(1+.12*L('copper'))*(gag.g_sc?1.35:1)*(1+.06*U('dmg'))*(G.mod&&G.mod.glass?1.5:1),mulCd=()=>Math.pow(.92,L('silver'))*(G.fever>0?.7:1)*(G.demo>0?.75:1)*(gag.g_128?.8:1),mulArea=()=>(1+.1*L('bal'))*P.area*(gag.g_44?1.3:1);
 const bossAlive=()=>enemies.some(e=>e.boss&&e.hp>0);
 
 function bands(){const e=id=>sup[id]?7:evo[id]?3:0;return {low:L('dd')+e('dd')+.4*L('copper')+.2*L('anc'),mid:.8*L('ba')+e('ba')+.6*L('pl')+e('pl')*.5,high:L('est')+e('est')+.4*L('silver')+.4*L('pl')+.2*L('hires')};}
@@ -532,7 +591,7 @@ function banner(t,s,cls){const b=$('banner');$('bT').textContent=t;$('bS').textC
 function float(x,y,s,c,big){if(texts.length>40)texts.shift();texts.push({x,y,s,c,t:big?.9:.6,big});}
 function burst(x,y,c,n,sp){for(let i=0;i<n&&parts.length<260;i++){const a=R()*TAU,v=(.3+R())*(sp||120);parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:.35+R()*.3,c,r:2+R()*3.5});}}
 function nearest(k,range){const a=[];for(const e of enemies){if(e.hp<=0)continue;const d=Math.hypot(e.x-P.x,e.y-P.y);if(d<range)a.push([d,e]);}a.sort((p,q)=>p[0]-q[0]);return a.slice(0,k).map(p=>p[1]);}
-function award(id){if(META.ach[id])return;META.ach[id]=1;save();toast('実績解除：'+ACH.find(a=>a[0]===id)[1],2.4);sfx('ach');}
+function award(id){if(META.ach[id])return;META.ach[id]=1;META.pts+=30;save();toast('実績解除：'+ACH.find(a=>a[0]===id)[1]+'（+30P）',2.4);sfx('ach');}
 function show(el,on){el.hidden=!on;}
 function shake(v){if(!reduced)G.shake=Math.max(G.shake,v);}
 let spEl=null;
@@ -571,14 +630,14 @@ const TYPES={
 };
 const TABLE=[[['white',70],['pop',30]],[['white',45],['pop',25],['hum',14],['clip',16]],[['white',34],['pop',20],['hum',14],['clip',16],['spike',16]],[['white',24],['pop',16],['hum',16],['clip',14],['spike',14],['wow',16]],[['white',18],['pop',14],['hum',18],['clip',16],['spike',16],['wow',18]]];
 const viewR=()=>Math.hypot(view.w,view.h)/2/view.z+50;
-const hpScale=()=>1+G.t/90+Math.pow(G.t/110,2.2)+G.loop*30;
+const hpScale=()=>(1+G.t/90+Math.pow(G.t/110,2.2)+G.loop*30)*(G.hpM||1);
 function spawn(type,x,y,elite){
   const T=TYPES[type],k=hpScale();
   if(x===undefined){const a=R()*TAU,d=viewR();x=P.x+Math.cos(a)*d;y=P.y+Math.sin(a)*d;}
   const e={type,x,y,hp:T.hp*k*(elite?7:1),r:T.r*(elite?1.45:1),kx:0,ky:0,fl:0,ph:R()*TAU,dash:1.5+R()*2,slow:0,elite:!!elite,sq:0,sh:1+R()*2};e.max=e.hp;enemies.push(e);return e;
 }
 function spawnBoss(def){
-  const hp0=Math.max(def.hp*Math.pow(2.6,G.loop),G.dps*def.secs*.3),a=R()*TAU,d=viewR()*.9,mk=side=>{const e={type:'boss',boss:def,x:P.x+Math.cos(a)*d+(side||0)*80,y:P.y+Math.sin(a)*d,hp:hp0,r:def.r,kx:0,ky:0,fl:0,ph:R()*TAU,slow:0,sq:0,bt:0,side:side||0,sa:0,st:0,tp:4};e.max=e.hp;enemies.push(e);return e;};
+  const hp0=Math.max(def.hp*Math.pow(2.6,G.loop),G.dps*def.secs*.3)*(1+.25*((G.nl||1)-1)),a=R()*TAU,d=viewR()*.9,mk=side=>{const e={type:'boss',boss:def,x:P.x+Math.cos(a)*d+(side||0)*80,y:P.y+Math.sin(a)*d,hp:hp0,r:def.r,kx:0,ky:0,fl:0,ph:R()*TAU,slow:0,sq:0,bt:0,side:side||0,sa:0,st:0,tp:4};e.max=e.hp;enemies.push(e);return e;};
   if(def.id==='cross'){mk(-1);mk(1);}else mk(0);
   G.bossHit=false;ebul=[];banner('WARNING',def.name+'　'+def.sub,'red');sfx('warn');shake(.5);
 }
@@ -604,7 +663,7 @@ function kill(e){
   else{const r=R();if(r<.004)drops.push({x:e.x,y:e.y,k:'rest'});else if(r<.0075)drops.push({x:e.x,y:e.y,k:'mag'});}
 }
 function bossDown(e){
-  const b=e.boss,bx=e.x,by=e.y;G.freeze=.35;G.flash=1;shake(.9);sfx('boom');call(b.name+' 撃破！',K.yellow);
+  const b=e.boss,bx=e.x,by=e.y;G.bossK++;META.st.boss[b.id]=(META.st.boss[b.id]||0)+1;G.freeze=.35;G.flash=1;shake(.9);sfx('boom');call(b.name+' 撃破！',K.yellow);
   for(let i=1;i<=6;i++)laters.push({t:i*.11,fn:()=>{const ox=bx+(R()-.5)*170,oy=by+(R()-.5)*170;burst(ox,oy,pick([K.yellow,K.pink,K.paper,b.c]),22,300);rings.push({x:ox,y:oy,r:90,t:.3,m:.3,c:K.paper,w:6});shake(.3);sfx('dd');}});
   rings.push({x:e.x,y:e.y,r:viewR(),t:.7,m:.7,c:K.paper});
   ebul=[];for(const o of enemies)if(!o.boss&&o.hp>0){o.hp=0;burst(o.x,o.y,TYPES[o.type].c,4);gems.push({x:o.x,y:o.y,v:TYPES[o.type].xp||1,ph:0,pull:true});}
@@ -616,17 +675,18 @@ function bossDown(e){
   banner(b.name+' 撃破',G.endless?'さらに深くへ':'第'+(zoneI()+1)+'層「'+ZONES[zoneI()]+'」へ','');
 }
 function hurt(d){
-  if(P.inv>0||G.state!=='play')return;d*=(1-.1*L('foam'))*(gag.g_met?.75:1)*P.taken*(1+zoneI()*.22+G.loop*.6);P.hp-=d;P.inv=.8;shake(.35);G.freeze=.07;G.flash=Math.max(G.flash,.25);sfx('hurt');float(P.x,P.y-26,'耳が痛い',K.pink,true);
+  if(P.inv>0||G.state!=='play')return;d*=(1-.1*L('foam'))*(gag.g_met?.75:1)*P.taken*(1+zoneI()*.22+G.loop*.6)*(G.dmgM||1);P.hp-=d;P.inv=.8;shake(.35);G.freeze=.07;G.flash=Math.max(G.flash,.25);sfx('hurt');float(P.x,P.y-26,'耳が痛い',K.pink,true);
   G.bossHit=true;if(G.mission&&G.mission.k==='nohit')endMission(false);
-  if(P.hp<=0){P.hp=0;gameOver();}
+  if(P.hp<=0){if(G.revive>0){G.revive--;P.hp=P.max*.5;P.inv=2.5;G.flash=1;banner('予備のイヤホンに付け替えた','まだ、もぐれる','mint');sfx('evo');rings.push({x:P.x,y:P.y,r:viewR(),t:.6,m:.6,c:K.mint,w:12});ebul=[];for(const e of enemies.slice())if(!e.boss)hit(e,e.max,0,true);}else{P.hp=0;gameOver();}}
 }
 function fever(){G.fever=6;G.fevers++;banner('フィーバー！',G.combo+' コンボ　攻撃が加速し、音符をぜんぶ吸い寄せる','pink');sfx('fever');G.flash=.6;for(const g of gems)g.pull=true;if(G.fevers>=3)award('fever3');}
 
 /* ---------- growth ---------- */
-function gainXp(v){G.xp+=v*(1+.12*L('hires'))*(1+Math.min(.5,G.combo/200));while(G.xp>=G.need){G.xp-=G.need;G.level++;G.need=Math.round(4+G.level*3.5+G.level*G.level*.9);G.pending++;}}
+function gainXp(v){G.xp+=v*(1+.06*U('xp'))*(G.mod.rich?1.5:1)*(1+.12*L('hires'))*(1+Math.min(.5,G.combo/200));while(G.xp>=G.need){G.xp-=G.need;G.level++;G.need=Math.round(4+G.level*3.5+G.level*G.level*.9);G.pending++;}}
 const evoReady=()=>DRIVERS.filter(id=>L(id)>=MAXLV&&!evo[id]&&L(EVO[id].need)>=3);
 const upgradable=()=>ITEMS.filter(i=>L(i.id)<MAXLV);
 function apply(it,n){
+  if(it.id!=='save')META.seen[it.sup?'S:'+it.id:it.evo?'E:'+it.id:it.id]=1;
   if(it.sup){sup[it.id]=1;META.sup[it.id]=1;save();award('sup1');G.evoQ.push({id:it.id,sup:true});}
   else if(it.evo){evo[it.id]=1;META.evo[it.id]=1;save();award('evo1');if(DRIVERS.every(d=>META.evo[d]))award('evoAll');G.evoQ.push({id:it.id});}
   else if(it.gag){if(!it.again)gag[it.id]=1;
@@ -648,7 +708,7 @@ function openShop(keep){
   if(!keep)G.pending--;const pool=upgradable();offer=[];
   const sr=supReady(),er=evoReady();if(sr.length)offer.push(supCard(pick(sr)));else if(er.length)offer.push(evoCard(pick(er)));
   while(offer.length<3&&pool.length){const it=pool.splice(Math.floor(R()*pool.length),1)[0];offer.push(R()<.1&&L(it.id)<=MAXLV-2?Object.assign({},it,{rare:true}):it);}
-  const gp=gagPool();if(gp.length&&G.d>=80&&R()<.26){const g=gagCard(pick(gp));if(offer.length<3)offer.push(g);else offer[2]=g;}
+  const gp=gagPool();if(gp.length&&(G.mod.gag||G.d>=80&&R()<.26)){const g=gagCard(pick(gp));if(offer.length<3)offer.push(g);else offer[2]=g;}
   if(!offer.length)offer=[{id:'save',cat:'理性',c:0,name:'今日は貯金する',price:0,desc:()=>'体力を 30 回復',quote:'買わないという選択肢も、ある。'}];
   const box=$('cards');box.textContent='';$('shopEyebrow').textContent=G.sale?'セール中！ぜんぶ半額':G.agari?'「これで上がり」…とは、ならなかった（Lv '+G.level+'）':'物欲が高まった（Lv '+G.level+'）';if(!keep)G.agari=false;
   offer.forEach((it,i)=>{
@@ -668,7 +728,7 @@ function buy(it,price,n,btn){
   if(G.state!=='shop'||G.buying)return;G.buying=true;
   const go=()=>{G.buying=false;apply(it,n);G.spend+=price;if(G.spend>=1e6)award('spend1m');if(G.spend>=1e8)award('spend100m');
     if(G.famI<2&&G.spend>=[1e6,1e8][G.famI]){G.famI++;G.fam=1;}
-    G.sale=false;hud();flowNext(it.evo||it.sup?'':it.id==='save'?'えらい':it.gag?'「'+it.quote+'」':'音の傾向：'+toneName());};
+    G.sale=!!G.mod.sale;hud();flowNext(it.evo||it.sup?'':it.id==='save'?'えらい':it.gag?'「'+it.quote+'」':'音の傾向：'+toneName());};
   sfx('buy');if(!btn||reduced){go();return;}
   btn.classList.add('sold');for(const c of $('cards').children)if(c!==btn)c.classList.add('fade');setTimeout(go,430);
 }
@@ -682,7 +742,7 @@ $('reroll').addEventListener('click',()=>{if(G.state!=='shop'||G.reroll<=0||G.bu
 /* lucky bag: a reel spins, then the haul is revealed one by one */
 let chestTimers=[];
 function openChest(n){
-  const r=R(),count=n||(r<.02?5:r<.15?3:1),haul=[];
+  const r=R(),count=n||(r<.02+.012*U('luck')?5:r<.15+.08*U('luck')?3:1),haul=[];
   for(let i=0;i<count;i++){const sr=supReady(),er=evoReady(),gp=gagPool();let it;
     if(sr.length){const id=pick(sr);it={id,sup:true,name:SUP[id].name};}
     else if(er.length){const id=pick(er);it={id,evo:true,name:EVO[id].name};}
@@ -719,12 +779,16 @@ function randomEvent(){
 /* ---------- flow ---------- */
 function reset(){
   lv={};evo={};sup={};gag={};trail=[];cd={ba:.3,dd:1,pl:.8,est:.6,anc:0};enemies=[];shots=[];ebul=[];gems=[];drops=[];parts=[];texts=[];rings=[];bolts=[];stars=[];laters=[];
-  Object.assign(G,{t:0,d:0,kills:0,spend:0,sale:false,level:1,xp:0,need:7,pending:0,spawnT:0,eliteT:35,eventT:28,bossI:0,loop:0,endless:false,shake:0,flash:0,freeze:0,combo:0,comboT:0,maxCombo:0,nextFever:50,fever:0,fevers:0,demo:0,reroll:2,tier:0,cleared:false,clearT:0,dmg:0,dps:0,dmgW:0,evoQ:[],evoFx:null,famI:0,fam:0,agari:false,mkN:0,mkT:.35,mkCd:0,thT:0,zoom:0,spShown:0,buying:false,mission:null,bossHit:false});
+  Object.assign(G,{t:0,d:0,kills:0,spend:0,sale:false,level:1,xp:0,need:7,pending:0,spawnT:0,eliteT:35,eventT:28,bossI:0,loop:0,endless:false,shake:0,flash:0,freeze:0,combo:0,comboT:0,maxCombo:0,nextFever:50,fever:0,fevers:0,demo:0,reroll:2,tier:0,cleared:false,clearT:0,dmg:0,dps:0,dmgW:0,evoQ:[],evoFx:null,famI:0,fam:0,agari:false,mkN:0,mkT:.35,mkCd:0,thT:0,zoom:0,spShown:0,buying:false,acc:null,bossK:0,mission:null,bossHit:false});
   const s=META.starter;Object.assign(P,{x:0,y:0,hp:100,max:100,inv:0,fx:0,fy:1,walk:0,spd:1,taken:1,area:1,starter:s});
-  if(s==='bass'){lv.dd=1;P.max=P.hp=130;P.spd=.94;G.spend=12800;}else if(s==='tws'){lv.anc=1;P.spd=1.12;G.spend=29800;}else if(s==='open'){lv.pl=1;P.area=1.25;P.taken=1.25;G.spend=39800;}else{lv.ba=1;G.spend=9800;}
+  G.mod={};if(G.daily)for(const m of dailyMods())G.mod[m[0]]=1;G.nl=G.daily?1:clamp(META.lv||1,1,META.maxLv);
+  G.hpM=(1+.35*(G.nl-1))*(G.mod.tank?1.5:1);G.spM=(1+.03*(G.nl-1))*(G.mod.fast?1.2:1);G.dmgM=1+.12*(G.nl-1);G.sale=!!G.mod.sale;
+  P.max=P.hp=100+10*U('hp');P.spd=1+.03*U('spd');
+  if(s==='bass'){lv.dd=1;P.max=P.hp=P.max+30;P.spd*=.94;G.spend=12800;}else if(s==='tws'){lv.anc=1;P.spd*=1.12;G.spend=29800;}else if(s==='open'){lv.pl=1;P.area=1.25;P.taken=1.25;G.spend=39800;}else{lv.ba=1;G.spend=9800;}
+  if(G.mod.glass)P.max=P.hp=Math.round(P.max/2);G.reroll=2+U('reroll');G.pending=U('start');G.revive=U('revive');for(const d of DRIVERS)if(lv[d])META.seen[d]=1;
   drawFR($('fr'));buildBar();$('zone').textContent='第1層 '+ZONES[0];hud();
 }
-function begin(){initAudio();reset();setState('play');banner('第1層 '+ZONES[0],'めざせ、深さ1000m','');toast('開封の儀、完了。いざ沼へ',1.8);}
+function begin(daily){initAudio();G.daily=!!daily;reset();setState('play');banner(G.daily?'本日の沼':'第1層 '+ZONES[0],G.daily?dailyMods().map(m=>m[1]).join('／'):'めざせ、深さ1000m'+(G.nl>1?'（沼レベル '+G.nl+'）':''),G.daily?'pink':'');toast('開封の儀、完了。いざ沼へ',1.8);}
 function pause(){if(G.state==='play'){$('pauseBuild').textContent=buildName()+'　｜　音の傾向：'+toneName()+'　｜　音圧 '+power()+'dB　｜　散財 '+yen(G.spend);setState('pause');}}
 function resume(){if(G.state==='pause')setState('play');}
 function conv(v){for(const [u,nm,sf] of [[15e7,'都心のマンション',' 部屋'],[15e5,'軽自動車',' 台'],[8e4,'ワンルームの家賃',' か月'],[500,'牛丼',' 杯']]){const n=v/u;if(n>=1)return nm+' '+(n>=10?Math.round(n).toLocaleString('ja-JP'):n.toFixed(1))+sf+'ぶん';}return '牛丼 0 杯ぶん';}
@@ -737,23 +801,68 @@ function review(){
 }
 function gameOver(){
   const d=depth(),clear=G.cleared&&!G.endless;sfx(clear?'clear':'over');
-  if(d>META.best)META.best=d;if(clear)META.clears++;save();if(clear)award('clear');
-  $('overEyebrow').textContent=clear?'沼の底にたどり着いた':G.endless?'底なし沼に飲まれた':'耳が限界をむかえた';
+  if(d>META.best)META.best=d;if(clear)META.clears++;
+  const st=META.st,td=today(),A=G.acc||{kills:0,spend:0,gain:0};if(!G.acc)st.runs++;st.kills+=G.kills-A.kills;st.spend+=G.spend-A.spend;st.combo=Math.max(st.combo,G.maxCombo);st.by[P.starter]=Math.max(st.by[P.starter]||0,d);if(clear&&(!st.fast||G.t<st.fast))st.fast=Math.round(G.t);
+  let mult=1+.25*(G.nl-1),lvUp=false;
+  if(G.daily){const dl=META.daily;if(dl.date!==td){dl.date=td;dl.best=0;dl.played=false;}if(!dl.played||G.acc&&G.acc.bonus){mult*=1.5;if(!dl.played){dl.played=true;META.streak=META.lastDay===dayKey(new Date(Date.now()-864e5))?(META.streak||0)+1:1;META.lastDay=td;}}dl.best=Math.max(dl.best,d);}
+  else if(clear&&G.nl===META.maxLv&&META.maxLv<10){META.maxLv++;lvUp=true;}
+  const tot=Math.round((d*.6+G.bossK*60+(G.cleared||G.endless?400:0)+Math.min(150,G.maxCombo*.1)+Math.min(200,Math.log10(G.spend+1)*12)*Math.min(1,d/200))*mult),gain=Math.max(0,tot-A.gain);G.acc={kills:G.kills,spend:G.spend,gain:tot,bonus:G.daily&&mult>1+.25*(G.nl-1)};META.pts+=gain;
+  save();if(clear)award('clear');if(st.runs>=10)award('runs10');if(st.spend>=1e9)award('rich');if(clear&&G.nl>=3)award('lv3');if(clear&&G.nl>=5)award('lv5');if(META.streak>=3)award('daily3');if(Object.keys(META.seen).length>=25)award('zukan');
+  $('rPts').textContent='+'+gain.toLocaleString('ja-JP')+' P（手持ち '+META.pts.toLocaleString('ja-JP')+' P）';$('rNext').textContent=(lvUp?'沼レベル '+META.maxLv+' が解放されました。':'')+'次の目標：'+nextGoal();
+  $('overEyebrow').textContent=(G.daily?'本日の沼｜':G.nl>1?'沼レベル '+G.nl+'｜':'')+(clear?'沼の底にたどり着いた':G.endless?'底なし沼に飲まれた':'耳が限界をむかえた');
   $('rank').textContent=rankName(d);$('rDepth').textContent=d;$('rSpend').textContent=yen(G.spend);$('rKills').textContent=G.kills;$('rCombo').textContent=G.maxCombo;$('rBuild').textContent=buildName();$('rTone').textContent=toneName();$('rConv').textContent=conv(G.spend);$('rRev').textContent=review();
-  $('share').value='イヤホン沼ダイブ｜沼の深さ '+d+'m（'+rankName(d)+'）／構成 '+buildName()+'／音の傾向 '+toneName()+'／音圧 '+power()+'dB／最大 '+G.maxCombo+' コンボ／散財総額 '+yen(G.spend)+'（'+conv(G.spend)+'）／ひと言 '+review();
+  $('share').value='イヤホン沼ダイブ'+(G.daily?'（本日の沼）':G.nl>1?'（沼レベル '+G.nl+'）':'')+'｜沼の深さ '+d+'m（'+rankName(d)+'）／構成 '+buildName()+'／音の傾向 '+toneName()+'／音圧 '+power()+'dB／最大 '+G.maxCombo+' コンボ／散財総額 '+yen(G.spend)+'（'+conv(G.spend)+'）／ひと言 '+review();
   drawFR($('frBig'),true);$('copy').textContent='結果をコピー';show($('endless'),clear);setState('over');
 }
-function menu(){
+function nextGoal(){
+  const u=UPG.find(u=>U(u.id)<u.max&&META.pts>=u.cost[U(u.id)]);if(u)return 'ポイントで「'+u.name+'」を強化できます。';
+  if(META.best<300)return 'あと '+(300-META.best)+'m で「低音番長」が解放されます。';if(META.best<600)return 'あと '+(600-META.best)+'m で「耳掛けステージモニター」が解放されます。';
+  if(!META.clears)return '沼の底を制覇すると、「開放型イヤホン」と沼レベル2が解放されます。';
+  if(!(META.daily.date===today()&&META.daily.played))return '「本日の沼」は、その日の初回だけ還元ポイントが1.5倍です。';
+  return '沼レベル '+META.maxLv+' の制覇です。';
+}
+let curTab='dive';
+function menu(tab){
+  if(typeof tab==='string')curTab=tab;
+  for(const t of ['dive','up','zukan','rec'])show($('t-'+t),t===curTab);
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.t===curTab)));
+  /* dive */
   const box=$('starters');box.textContent='';if(!STARTERS.find(s=>s.id===META.starter&&s.ok(META)))META.starter='std';
   for(const s of STARTERS){const ok=s.ok(META),b=document.createElement('button');b.type='button';b.className='st';b.disabled=!ok;b.setAttribute('aria-pressed',String(META.starter===s.id));
-    const n=document.createElement('b');n.textContent=s.name;b.appendChild(n);b.appendChild(document.createTextNode(ok?s.desc:s.cond));
+    const n=document.createElement('b');n.textContent=s.name;b.appendChild(n);b.appendChild(document.createTextNode(ok?s.desc+(META.st.by[s.id]?'（最深 '+META.st.by[s.id]+'m）':''):s.cond));
     b.addEventListener('click',()=>{META.starter=s.id;save();menu();});box.appendChild(b);}
-  const got=ACH.filter(a=>META.ach[a[0]]).length;$('achSum').textContent='実績 '+got+' / '+ACH.length+'　覚醒 '+DRIVERS.filter(d=>META.evo[d]).length+' / 5　超覚醒 '+DRIVERS.filter(d=>(META.sup||{})[d]).length+' / 5';
+  META.lv=clamp(META.lv||1,1,META.maxLv);$('lvNum').textContent=META.lv;$('lvDown').disabled=META.lv<=1;$('lvUp').disabled=META.lv>=META.maxLv;
+  $('lvNote').textContent=META.maxLv<2?'沼の底を制覇すると、上のレベルが解放されます':META.lv>1?'ノイズが強くなり、還元ポイントは ×'+(1+.25*(META.lv-1)).toFixed(2):'標準の強さ（レベル '+META.maxLv+' まで選べます）';
+  const dl=META.daily,td=today(),played=dl.date===td&&dl.played;
+  $('dailyNote').textContent='本日の沼のルール：'+dailyMods().map(m=>m[1]).join('／')+(played?'。今日の最深 '+dl.best+'m':'。今日の初回は還元ポイント1.5倍')+(META.streak>1&&META.lastDay===td?'（'+META.streak+'日連続）':'');
+  $('bestNote').textContent=META.best?'最深 '+META.best+' m　制覇 '+META.clears+' 回　手持ち '+META.pts.toLocaleString('ja-JP')+' P':'';
+  /* upgrades */
+  $('pts').textContent=META.pts.toLocaleString('ja-JP');const ups=$('ups');ups.textContent='';let can=0;
+  for(const u of UPG){const l=U(u.id),mx=l>=u.max,cost=mx?0:u.cost[l],b=document.createElement('button');b.type='button';b.className='up'+(mx?' max':'');b.disabled=mx||META.pts<cost;if(!mx&&META.pts>=cost)can++;
+    const add=(tag,c,t)=>{const e=document.createElement(tag);if(c)e.className=c;e.textContent=t;b.appendChild(e);};
+    add('b','',u.name+'　'+'●'.repeat(l)+'○'.repeat(u.max-l));add('span','c',mx?'最大':cost+' P');add('span','',mx?u.desc(l):(l?u.desc(l)+' → ':'')+u.desc(l+1));
+    b.addEventListener('click',()=>{if(META.pts<cost||mx)return;META.pts-=cost;META.up[u.id]=l+1;save();sfx('buy');menu();});ups.appendChild(b);}
+  $('upBadge').textContent=can||'';
+  /* collection */
+  const ents=[...ITEMS.map(i=>({k:i.id,id:i.id,e:0,name:i.name,desc:i.desc(1),quote:i.quote,how:'買い物で手に入る'})),...DRIVERS.map(d=>({k:'E:'+d,id:d,e:1,name:EVO[d].name,desc:EVO[d].desc,quote:EVO[d].quote,how:'覚醒で手に入る'})),
+    ...DRIVERS.map(d=>({k:'S:'+d,id:d,e:2,name:SUP[d].name,desc:SUP[d].desc,quote:SUP[d].quote,how:'超覚醒で手に入る'})),...GAGS.map(g=>({k:g.id,id:g.id,e:0,name:g.name,desc:g.desc,quote:g.quote,how:'「ありえない棚」で見つかる'}))];
+  const zk=$('zk');zk.textContent='';let got=0;
+  for(const en of ents){const seen=!!META.seen[en.k];if(seen)got++;const b=document.createElement('button');b.type='button';b.className='zc'+(seen?'':' no');b.setAttribute('aria-label',seen?en.name:'まだ見つけていない機材');
+    if(seen)b.appendChild(iconImg(en.id,en.e));else b.textContent='？';
+    b.addEventListener('click',()=>{$('zkInfo').textContent=seen?en.name+'：'+en.desc+'。「'+en.quote+'」':'？？？（'+en.how+'）';});zk.appendChild(b);}
+  $('zkSum').textContent='機材図鑑 '+got+' / '+ents.length;
+  /* records */
+  const st=META.st,rs=$('recStats');rs.textContent='';const mmss=t=>Math.floor(t/60)+'分'+String(t%60).padStart(2,'0')+'秒';
+  for(const [l,v] of [['最深',META.best+' m'],['制覇',META.clears+' 回'],['もぐった回数',st.runs+' 回'],['到達した沼レベル',String(META.maxLv)],['生涯の散財',yen(st.spend)],['消したノイズ',st.kills.toLocaleString('ja-JP')],['最大コンボ',String(st.combo)],['最速の制覇',st.fast?mmss(st.fast):'—'],['倒したボス',BOSSES.map(b=>b.name+' '+(st.boss[b.id]||0)).join('　')]]){
+    const d=document.createElement('div');d.className='stat'+(l==='倒したボス'||l==='生涯の散財'?' full':'');const a=document.createElement('div');a.className='l';a.textContent=l;const c=document.createElement('div');c.className='v';c.textContent=v;d.appendChild(a);d.appendChild(c);rs.appendChild(d);}
+  $('achSum').textContent='実績 '+ACH.filter(a=>META.ach[a[0]]).length+' / '+ACH.length+'（1つにつき 30 P）';
   const ul=$('achList');ul.textContent='';for(const [id,name] of ACH){const li=document.createElement('li');li.textContent=name;if(META.ach[id])li.className='ok';ul.appendChild(li);}
-  $('bestNote').textContent=META.best?'最深 '+META.best+' m　制覇 '+META.clears+' 回':'';
   setState('menu');
 }
-$('start').addEventListener('click',begin);$('retry').addEventListener('click',begin);$('resume').addEventListener('click',resume);$('pauseBtn').addEventListener('click',pause);$('toMenu').addEventListener('click',menu);
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>menu(b.dataset.t)));
+$('lvDown').addEventListener('click',()=>{META.lv=Math.max(1,META.lv-1);save();menu();});$('lvUp').addEventListener('click',()=>{META.lv=Math.min(META.maxLv,META.lv+1);save();menu();});
+$('dailyBtn').addEventListener('click',()=>begin(true));$('toUp').addEventListener('click',()=>menu('up'));
+$('start').addEventListener('click',()=>begin(false));$('retry').addEventListener('click',()=>begin(G.daily));$('resume').addEventListener('click',resume);$('pauseBtn').addEventListener('click',pause);$('toMenu').addEventListener('click',()=>menu('dive'));
 $('quit').addEventListener('click',()=>{if(G.state==='pause'){setState('play');gameOver();}});
 $('endless').addEventListener('click',()=>{G.endless=true;G.cleared=false;G.bossI=0;G.loop=1;P.hp=P.max;setState('play');banner('底なしモード','ここから先に底はない','pink');});
 $('mute').addEventListener('click',()=>{G.music=!G.music;if(musicG)musicG.gain.value=G.music?1:0;$('mute').textContent=G.music?'音楽を止める':'音楽を流す';});
@@ -835,7 +944,7 @@ function update(dt){
   /* spawns */
   G.spawnT-=dt;
   if(G.spawnT<=0&&enemies.length<230){G.spawnT=(bossOn?2:1)/Math.min(18,1.5+G.t/13);const tb=TABLE[z];let r=R()*100;for(const [t,w] of tb){r-=w;if(r<=0){spawn(t);break;}}}
-  G.eliteT-=dt;if(G.eliteT<=0&&!bossOn){G.eliteT=45;const tb=TABLE[z];spawn(tb[Math.min(tb.length-1,2+Math.floor(R()*2))][0],undefined,undefined,true);toast('高級ノイズが現れた（福袋もち）',1.6);}
+  G.eliteT-=dt;if(G.eliteT<=0&&!bossOn){G.eliteT=G.mod.elite?15:45;const tb=TABLE[z];spawn(tb[Math.min(tb.length-1,2+Math.floor(R()*2))][0],undefined,undefined,true);toast('高級ノイズが現れた（福袋もち）',1.6);}
   G.eventT-=dt;if(G.eventT<=0){G.eventT=30+R()*10;if(!bossOn&&!G.mission&&!G.cleared)randomEvent();}
   const m=G.mission;if(m){m.t-=dt;if(m.k==='nohit')m.p=m.goal-m.t;else if(m.k==='spot'&&Math.hypot(P.x-m.x,P.y-m.y)<95)m.p+=dt;if(m.p>=m.goal)endMission(true);else if(m.t<=0)endMission(m.k==='nohit');}
   /* weapons */
@@ -864,7 +973,7 @@ function update(dt){
     if(!dead)for(const e of enemies){if(e.hp<=0)continue;if(Math.hypot(e.x-s.x,e.y-s.y)<e.r+s.r){if(s.k==='ba'){stars.push({x:s.x,y:s.y,t:.16,m:.16,r:s.E?22:12,c:s.E?'#ffb347':K.yellow});hit(e,s.d);dead=true;break;}else if(!s.seen.has(e)){s.seen.add(e);if(!e.boss){e.kx+=s.vx*.5;e.ky+=s.vy*.5;}hit(e,s.d);}}}
     if(dead)shots.splice(i,1);}
   /* enemies */
-  const far=viewR()*1.7,spk=1+Math.min(.7,G.t/300);
+  const far=viewR()*1.7,spk=(1+Math.min(.7,G.t/300))*(G.spM||1);
   for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];if(e.hp<=0){enemies.splice(i,1);continue;}
     const dx=P.x-e.x,dy=P.y-e.y,d=Math.hypot(dx,dy)||1;let sp,dmg;
     if(e.boss){sp=bossAI(e,dt,d);dmg=22;if(G.state!=='play')return;}
@@ -878,7 +987,7 @@ function update(dt){
     if(d<e.r+12)hurt(dmg);if(G.state!=='play')return;}
   for(let i=ebul.length-1;i>=0;i--){const b=ebul[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.t-=dt;if(b.t<=0){ebul.splice(i,1);continue;}if(Math.hypot(b.x-P.x,b.y-P.y)<15){ebul.splice(i,1);hurt(12);if(G.state!=='play')return;}}
   /* pickups */
-  const reach=84*(1+.15*L('hires')),fv=G.fever>0;
+  const reach=84*(1+.15*L('hires'))*(1+.1*U('reach')),fv=G.fever>0;
   for(let i=gems.length-1;i>=0;i--){const g=gems[i],dx=P.x-g.x,dy=P.y-g.y,d=Math.hypot(dx,dy)||1;g.ph+=dt*5;
     if(d<reach||g.pull||fv){g.pull=true;const v=Math.min(d,(300+(g.s=(g.s||0)+dt*900))*dt);g.x+=dx/d*v;g.y+=dy/d*v;}
     if(d<18){gems.splice(i,1);gainXp(g.v);sfx('gem');}}
