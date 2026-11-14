@@ -42,7 +42,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hp i{display:block;height:100%;width:100%;background:var(--pink);transform-origin:left}
 .right{display:flex;gap:8px;align-items:flex-start;pointer-events:auto}
 #fr{display:block;width:96px;height:42px}
-.ibtn{border:0;background:var(--ink);color:var(--paper);border-radius:10px;padding:10px;font-size:12px;line-height:1.2;white-space:nowrap}
+.ibtn{border:0;background:var(--ink);color:var(--paper);border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.2;white-space:nowrap}
+.btncol{display:flex;flex-direction:column;gap:4px}
+#spdBtn{font-family:var(--display);font-weight:400;font-variant-numeric:tabular-nums}
+#spdBtn.on{background:var(--yellow);color:var(--ink)}
 .mid{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:8px}
 #boss{width:min(100%,460px);background:var(--ink);border-radius:10px;padding:5px 10px 8px}
 #boss .nm{font-size:12px;display:flex;justify-content:space-between;gap:8px}
@@ -262,7 +265,7 @@ summary{cursor:pointer;font-weight:900}
       <div class="chip"><div class="l">体力　物欲 Lv <span id="lv">1</span></div><div class="hp"><i id="hp"></i></div></div>
       <div class="right">
         <div class="chip" title="いまの構成の周波数特性"><canvas id="fr" width="192" height="84"></canvas></div>
-        <button class="ibtn" id="pauseBtn" type="button">停止</button>
+        <div class="btncol"><button class="ibtn" id="pauseBtn" type="button">停止</button><button class="ibtn" id="spdBtn" type="button" aria-label="ゲームの速さを切り替える">×1</button></div>
       </div>
     </div>
     <div class="mid">
@@ -320,6 +323,7 @@ summary{cursor:pointer;font-weight:900}
           <details><summary>遊び方</summary>
             <ul class="how">
               <li><b>動かす</b></li><li>画面をなぞる（PCは WASD か矢印キー）</li>
+              <li><b>倍速</b></li><li>右上の「×1」で 1.5倍・2倍に切り替え（PCは F キー）</li>
               <li><b>コンボ</b></li><li>ノイズを続けて消すと経験値アップ。伸ばすとフィーバー</li>
               <li><b>覚醒</b></li><li>ドライバーを Lv5、相方の機材を Lv3 にすると進化</li>
               <li><b>合体</b></li><li>Lv5 のドライバー2つは合体できる。組み合わせは進化表で確認できる</li>
@@ -1016,6 +1020,9 @@ function menu(tab){
 }
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>menu(b.dataset.t)));
 $('lvDown').addEventListener('click',()=>{META.lv=Math.max(1,META.lv-1);save();menu();});$('lvUp').addEventListener('click',()=>{META.lv=Math.min(META.maxLv,META.lv+1);save();menu();});
+/* game speed: remembered between dives; the world steps in smaller slices so nothing tunnels at 2x */
+function setSpeed(v){META.speed=v;save();const b=$('spdBtn');b.textContent='×'+v;b.classList.toggle('on',v>1);}
+$('spdBtn').addEventListener('click',()=>{setSpeed({1:1.5,1.5:2,2:1}[META.speed||1]||1);sfx('tick');});setSpeed([1,1.5,2].includes(META.speed)?META.speed:1);
 $('dailyBtn').addEventListener('click',()=>begin(true));$('toUp').addEventListener('click',()=>menu('up'));
 $('start').addEventListener('click',()=>begin(false));$('retry').addEventListener('click',()=>begin(G.daily));$('resume').addEventListener('click',resume);$('pauseBtn').addEventListener('click',pause);$('toMenu').addEventListener('click',()=>menu('dive'));
 $('quit').addEventListener('click',()=>{if(G.state==='pause'){setState('play');gameOver();}});
@@ -1030,6 +1037,7 @@ addEventListener('keydown',e=>{
   if(G.state==='shop'&&['Digit1','Digit2','Digit3'].includes(e.code)){const b=$('cards').children[+e.code.slice(5)-1];if(b)b.click();return;}
   if(G.state==='chest'&&(e.code==='Enter'||e.code==='Space')){$('take').click();return;}
   if(G.state==='evo'){if(G.evoFx&&G.evoFx.t>1.8)endEvo();return;}
+  if(e.code==='KeyF'&&G.state==='play'){$('spdBtn').click();return;}
   if(e.code==='KeyP'||e.code==='Escape'){if(G.state==='play')pause();else resume();return;}
   if(G.state==='play'&&(e.code.startsWith('Arrow')||e.code==='Space'))e.preventDefault();keys[e.code]=true;});
 addEventListener('keyup',e=>{keys[e.code]=false;});
@@ -1394,7 +1402,7 @@ function frame(now){
   if(G.state==='play'){
     if(G.cine){G.cine.t+=raw;if(G.cine.t>2.3){G.cine=null;G.freeze=0;shake(.5);show($('hud'),true);}}
     if(G.slowT>0)G.slowT-=raw;const ts=G.slowT>0&&!reduced?.28:1;
-    if(G.freeze>0)G.freeze-=raw;else for(let i=0,n=window.__speed||1;i<n&&G.state==='play';i++)update(raw*ts);
+    if(G.freeze>0)G.freeze-=raw;else{const sp=(window.__speed||1)*(META.speed||1),n=Math.ceil(sp);for(let i=0;i<n&&G.state==='play';i++)update(raw*ts*sp/n);}
     if(G.lvFx>0&&G.state==='play'){G.lvFx-=raw;if(G.lvFx<=0&&G.pending>0&&!(G.dying>0))openShop();}
     if(G.dying>0&&G.state==='play'){G.dying-=raw;if(R()<.5)parts.push({x:P.x+(R()-.5)*30,y:P.y,vx:(R()-.5)*20,vy:-90-R()*60,t:.8,c:'rgba(255,255,255,.7)',r:2+R()*4});if(G.dying<=0){G.dying=0;gameOver();}}
     music();}
